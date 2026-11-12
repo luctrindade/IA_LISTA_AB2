@@ -1,0 +1,36 @@
+{
+  "nome": "Rede bayesiana didática de influenza",
+  "estados": ["nao", "sim"],
+  "nos": [
+    {
+      "id": "exposicao",
+      "rotulo": "Exposição recente",
+      "pais": [],
+      "p_sim": {"": 0.20}
+    },
+    {
+      "id": "influenza",
+      "rotulo": "Influenza",
+      "pais": ["exposicao"],
+      "p_sim": {"nao": 0.05, "sim": 0.30}
+    },
+    {
+      "id": "febre",
+      "rotulo": "Febre",
+      "pais": ["influenza"],
+      "p_sim": {"nao": 0.20, "sim": 0.75}
+    },
+    {
+      "id": "tosse",
+      "rotulo": "Tosse",
+      "pais": ["influenza"],
+      "p_sim": {"nao": 0.35, "sim": 0.80}
+    },
+    {
+      "id": "dor_muscular",
+      "rotulo": "Dor muscular",
+      "pais": ["influenza"],
+      "p_sim": {"nao": 0.15, "sim": 0.65}
+    }
+  ]
+}
