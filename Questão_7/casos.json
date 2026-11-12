@@ -1,0 +1,17 @@
+[
+  {"id": "C01", "sintomas": ["coriza", "espirros", "dor de garganta", "tosse"], "diagnostico": "Resfriado comum", "tratamento": "Repouso e hidratação no caso fictício."},
+  {"id": "C02", "sintomas": ["coriza", "congestão nasal", "dor de garganta"], "diagnostico": "Resfriado comum", "tratamento": "Hidratação e repouso no caso fictício."},
+  {"id": "C03", "sintomas": ["espirros", "congestão nasal", "tosse"], "diagnostico": "Resfriado comum", "tratamento": "Repouso e hidratação no caso fictício."},
+  {"id": "C04", "sintomas": ["febre", "tosse", "dor muscular", "fadiga"], "diagnostico": "Influenza", "tratamento": "Repouso, hidratação e avaliação clínica no caso fictício."},
+  {"id": "C05", "sintomas": ["febre", "calafrios", "dor muscular", "dor de cabeça"], "diagnostico": "Influenza", "tratamento": "Repouso, hidratação e avaliação clínica no caso fictício."},
+  {"id": "C06", "sintomas": ["febre", "tosse", "fadiga", "dor de garganta"], "diagnostico": "Influenza", "tratamento": "Repouso, hidratação e avaliação clínica no caso fictício."},
+  {"id": "C07", "sintomas": ["espirros", "coriza", "coceira no nariz", "olhos lacrimejantes"], "diagnostico": "Rinite alérgica", "tratamento": "Redução da exposição ao alérgeno no caso fictício."},
+  {"id": "C08", "sintomas": ["espirros", "congestão nasal", "coceira no nariz"], "diagnostico": "Rinite alérgica", "tratamento": "Redução da exposição ao alérgeno no caso fictício."},
+  {"id": "C09", "sintomas": ["coriza", "congestão nasal", "olhos lacrimejantes"], "diagnostico": "Rinite alérgica", "tratamento": "Redução da exposição ao alérgeno no caso fictício."},
+  {"id": "C10", "sintomas": ["dor de cabeça", "náusea", "sensibilidade à luz"], "diagnostico": "Enxaqueca", "tratamento": "Repouso em local escuro e silencioso no caso fictício."},
+  {"id": "C11", "sintomas": ["dor de cabeça", "sensibilidade à luz", "sensibilidade ao som"], "diagnostico": "Enxaqueca", "tratamento": "Repouso em local escuro e silencioso no caso fictício."},
+  {"id": "C12", "sintomas": ["dor de cabeça", "náusea", "vômito", "sensibilidade ao som"], "diagnostico": "Enxaqueca", "tratamento": "Repouso em local escuro e silencioso no caso fictício."},
+  {"id": "C13", "sintomas": ["diarreia", "vômito", "dor abdominal", "náusea"], "diagnostico": "Gastroenterite viral", "tratamento": "Reposição oral de líquidos e eletrólitos no caso fictício."},
+  {"id": "C14", "sintomas": ["diarreia", "dor abdominal", "febre"], "diagnostico": "Gastroenterite viral", "tratamento": "Reposição oral de líquidos e eletrólitos no caso fictício."},
+  {"id": "C15", "sintomas": ["diarreia", "vômito", "dor abdominal"], "diagnostico": "Gastroenterite viral", "tratamento": "Reposição oral de líquidos e eletrólitos no caso fictício."}
+]
