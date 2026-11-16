@@ -1,0 +1,218 @@
+\documentclass[12pt,a4paper]{article}
+
+\usepackage[utf8]{inputenc}
+\usepackage[T1]{fontenc}
+\usepackage[brazil]{babel}
+\usepackage[top=3cm,left=3cm,bottom=2cm,right=2cm]{geometry}
+\usepackage{mathptmx}
+\usepackage{inconsolata}
+\usepackage{setspace}
+\usepackage{indentfirst}
+\usepackage{titlesec}
+\usepackage{booktabs}
+\usepackage{array}
+\usepackage{listings}
+\usepackage{xcolor}
+\usepackage{xurl}
+\urlstyle{same}
+
+\onehalfspacing
+\setlength{\parindent}{1.25cm}
+
+\titleformat*{\section}{\normalfont\bfseries\normalsize}
+\titleformat*{\subsection}{\normalfont\bfseries\normalsize}
+\titleformat*{\subsubsection}{\normalfont\bfseries\normalsize}
+
+\lstset{
+    basicstyle=\ttfamily\footnotesize,
+    breaklines=true,
+    columns=fullflexible,
+    keepspaces=true,
+    frame=single,
+    rulecolor=\color{black!25},
+    backgroundcolor=\color{black!4},
+    xleftmargin=0.2cm,
+    xrightmargin=0.2cm,
+    framexleftmargin=4pt,
+    framexrightmargin=4pt,
+    framextopmargin=4pt,
+    framexbottommargin=4pt,
+    literate=
+        {á}{{\'a}}1 {é}{{\'e}}1 {í}{{\'i}}1 {ó}{{\'o}}1 {ú}{{\'u}}1
+        {Á}{{\'A}}1 {É}{{\'E}}1 {Í}{{\'I}}1 {Ó}{{\'O}}1 {Ú}{{\'U}}1
+        {ã}{{\~a}}1 {õ}{{\~o}}1 {Ã}{{\~A}}1 {Õ}{{\~O}}1
+        {â}{{\^a}}1 {ê}{{\^e}}1 {ô}{{\^o}}1
+        {à}{{\`a}}1 {ç}{{\c{c}}}1 {Ç}{{\c{C}}}1
+}
+
+\begin{document}
+
+\section{Questão 04: Tipos de agentes e ambientes de tarefa}
+
+A descrição PEAS identifica a medida de desempenho, o ambiente, os atuadores e os sensores. As propriedades abaixo valem para os cenários descritos. Um ambiente conhecido tem regras de transição especificadas, mesmo quando parte do estado fica oculta [1].
+
+\subsection{Agente reativo simples}
+
+Aplica regras condição--ação à percepção atual. A decisão pode ser tomada diretamente a partir da leitura dos sensores.
+
+\subsubsection{Separador de peças por cor}
+
+Se a peça for vermelha, o agente a desvia. As demais seguem em frente.
+
+\textbf{P (Desempenho).} Percentual de peças encaminhadas à saída correta.
+
+\textbf{E (Ambiente).} Esteira de laboratório com uma peça por ciclo, parada durante a leitura e o desvio.
+
+\textbf{A (Atuadores).} Comando da comporta de desvio.
+
+\textbf{S (Sensores).} Sensor de presença e leitor de cor.
+
+\textbf{Propriedades.} Totalmente observável, determinístico, episódico, estático, discreto e de agente único, com regras conhecidas. A cor relevante é lida sem ruído e a decisão sobre uma peça independe da anterior.
+
+\subsubsection{Controle de nível de um reservatório}
+
+Ao atingir o nível mínimo, liga a bomba. Ao atingir o máximo, desliga. Entre os limites, mantém a saída atual, lida do relé.
+
+\textbf{P (Desempenho).} Tempo dentro da faixa de nível e número de acionamentos.
+
+\textbf{E (Ambiente).} Reservatório isolado com nível contínuo e retirada de água de vazão variável.
+
+\textbf{A (Atuadores).} Relé da bomba de entrada.
+
+\textbf{S (Sensores).} Medidor de nível e leitura do estado do relé.
+
+\textbf{Propriedades.} Parcialmente observável, estocástico, sequencial, dinâmico e contínuo, com agente único e dinâmica parcialmente conhecida. A retirada é incerta e não é medida. A bomba altera o nível futuro, que evolui durante a operação.
+
+\subsection{Agente baseado em modelo (com estado)}
+
+Atualiza um estado interno a partir das percepções, das ações anteriores e de um modelo do ambiente. Suas regras podem usar esse estado para decidir.
+
+\subsubsection{Aspirador que acompanha a cobertura}
+
+Em uma sala quadriculada, o robô registra as células já limpas. Usa esse mapa para escolher um vizinho ainda pendente, seguindo uma ordem fixa de varredura.
+
+\textbf{P (Desempenho).} Cobertura da limpeza, deslocamentos e colisões.
+
+\textbf{E (Ambiente).} Grade fixa com obstáculos conhecidos e sujeira inicial desconhecida. A sujeira permanece até ser aspirada.
+
+\textbf{A (Atuadores).} Mover para célula adjacente e aspirar.
+
+\textbf{S (Sensores).} Sensor de sujeira local e leitura da posição.
+
+\textbf{Propriedades.} Parcialmente observável, determinístico, sequencial, estático, discreto e de agente único, com regras conhecidas. O robô só mede sujeira onde está. Sua trajetória e limpeza mudam o estado das próximas decisões.
+
+\subsubsection{Contagem de vagas em estacionamento}
+
+Soma entradas e subtrai saídas desde a abertura com o pátio vazio. O total estimado controla a indicação de lotação.
+
+\textbf{P (Desempenho).} Erro da contagem e acerto da indicação de lotação.
+
+\textbf{E (Ambiente).} Estacionamento com capacidade fixa e uma passagem controlada por sentido.
+
+\textbf{A (Atuadores).} Painel de vagas livres e indicação de lotado.
+
+\textbf{S (Sensores).} Detectores nas entradas e saídas, sujeitos a falhas de registro.
+
+\textbf{Propriedades.} Parcialmente observável, estocástico, sequencial, dinâmico e discreto. Há um agente controlador e as regras de contagem são conhecidas. Desde a abertura, a ocupação exata pode ser reconstituída se nenhuma passagem deixar de ser registrada.
+
+\subsection{Agente baseado em objetivo}
+
+Escolhe ações avaliando se elas levam a uma condição desejada. O planejamento antecipa as consequências de uma sequência de ações.
+
+\subsubsection{Solucionador do quebra-cabeça de oito peças}
+
+Busca uma sequência de movimentos que transforme o tabuleiro inicial na configuração final.
+
+\textbf{P (Desempenho).} Alcançar a configuração desejada com movimentos válidos.
+
+\textbf{E (Ambiente).} Tabuleiro $3 \times 3$ com oito peças e uma casa vazia.
+
+\textbf{A (Atuadores).} Deslocar uma peça adjacente à casa vazia.
+
+\textbf{S (Sensores).} Leitura completa do tabuleiro.
+
+\textbf{Propriedades.} Totalmente observável, determinístico, sequencial, estático, discreto e de agente único, com regras conhecidas. Cada movimento altera as possibilidades seguintes e o tabuleiro só muda por ação do solucionador.
+
+\subsubsection{Planejador de montagem em simulador}
+
+Planeja a colocação de componentes na ordem exigida até obter um produto com todas as peças instaladas.
+
+\textbf{P (Desempenho).} Produto completo e respeito às dependências de montagem.
+
+\textbf{E (Ambiente).} Bancada virtual com peças disponíveis e operações discretas.
+
+\textbf{A (Atuadores).} Selecionar peça, mover para o encaixe e fixar.
+
+\textbf{S (Sensores).} Leitura do inventário e dos encaixes ocupados.
+
+\textbf{Propriedades.} Totalmente observável, determinístico, sequencial, estático, discreto e de agente único, com regras conhecidas. O simulador expõe o estado completo e aplica transições previsíveis entre as etapas.
+
+\subsection{Agente baseado em utilidade}
+
+Atribui valores às consequências possíveis e escolhe uma ação que maximize a utilidade esperada. Assim, consegue comparar opções que satisfazem a mesma meta com custos diferentes.
+
+\subsubsection{Roteamento de entregas urbanas}
+
+Compara rotas válidas por atraso, distância e custo. Usa estimativas de trânsito para calcular a utilidade esperada de cada alternativa.
+
+\textbf{P (Desempenho).} Reduzir o custo da viagem e as entregas fora do prazo.
+
+\textbf{E (Ambiente).} Malha viária com trânsito, clientes e outros condutores.
+
+\textbf{A (Atuadores).} Selecionar o próximo trecho e atualizar o itinerário.
+
+\textbf{S (Sensores).} GPS, horários de entrega e dados de trânsito.
+
+\textbf{Propriedades.} Parcialmente observável, estocástico, sequencial, dinâmico, misto e multiagente, com dinâmica parcialmente conhecida. Os trechos são discretos e o tempo é contínuo. Outros condutores influenciam as condições futuras.
+
+\subsubsection{Controle de climatização de uma sala}
+
+Ajusta potência para equilibrar conforto térmico e gasto de energia. A função de utilidade penaliza desvios de temperatura e consumo.
+
+\textbf{P (Desempenho).} Minimizar consumo e tempo fora da faixa de conforto.
+
+\textbf{E (Ambiente).} Sala ocupada com trocas térmicas com o exterior.
+
+\textbf{A (Atuadores).} Ajustar a potência do climatizador.
+
+\textbf{S (Sensores).} Termômetros, detector de presença e medidor de energia.
+
+\textbf{Propriedades.} Parcialmente observável, estocástico, sequencial, dinâmico e contínuo, com um agente controlador e dinâmica parcialmente conhecida. A carga térmica varia e só é observada indiretamente. A potência atual afeta a temperatura futura.
+
+\subsection{Agente adaptativo (com aprendizagem)}
+
+Usa a experiência para melhorar suas decisões. Um componente de desempenho escolhe as ações e um componente de aprendizagem usa a avaliação dos resultados para atualizar esse comportamento. A aprendizagem pode complementar as arquiteturas anteriores [1].
+
+\subsubsection{Filtro de mensagens indesejadas}
+
+Classifica cada mensagem e ajusta o modelo com correções do usuário, como a marcação de uma mensagem legítima que caiu na pasta de spam.
+
+\textbf{P (Desempenho).} Reduzir spam na caixa de entrada e evitar o bloqueio de mensagens legítimas.
+
+\textbf{E (Ambiente).} Serviço de e-mail com usuários e remetentes que podem mudar suas estratégias.
+
+\textbf{A (Atuadores).} Mover mensagem para caixa de entrada, spam ou quarentena.
+
+\textbf{S (Sensores).} Conteúdo, metadados e correções do usuário.
+
+\textbf{Propriedades.} Parcialmente observável, estocástico, sequencial, dinâmico, discreto e multiagente, com distribuição de mensagens desconhecida. A intenção do remetente é oculta. Como a ação afeta quais mensagens o usuário vê e corrige, as decisões influenciam a aprendizagem posterior.
+
+\subsubsection{Irrigação adaptativa de estufa}
+
+Ajusta sua estimativa de quanto a umidade do solo muda com cada rega a partir das medições posteriores e usa o modelo atualizado nas próximas decisões.
+
+\textbf{P (Desempenho).} Manter a umidade em faixa adequada e reduzir o consumo de água.
+
+\textbf{E (Ambiente).} Estufa com canteiros, substrato e variação de temperatura e evaporação.
+
+\textbf{A (Atuadores).} Controlar a abertura das válvulas e a duração da rega.
+
+\textbf{S (Sensores).} Sensores de umidade, temperatura e vazão.
+
+\textbf{Propriedades.} Parcialmente observável, estocástico, sequencial, dinâmico e contínuo, com um agente controlador e dinâmica parcialmente conhecida. A umidade é medida em pontos do solo e a absorção varia. Cada rega influencia o estado futuro e fornece dados para atualizar o modelo.
+
+\section*{Referências}
+
+\noindent [1] RUSSELL, S. J.; NORVIG, P. \textbf{Artificial Intelligence: A Modern Approach}. 4. ed. Capítulo 2, Intelligent Agents. Disponível em: \url{https://aima.cs.berkeley.edu/4th-ed/pdfs/newchap02.pdf}.
+
+\end{document}

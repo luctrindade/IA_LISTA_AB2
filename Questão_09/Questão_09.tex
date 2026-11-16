@@ -1,0 +1,143 @@
+\documentclass[12pt,a4paper]{article}
+
+\usepackage[utf8]{inputenc}
+\usepackage[T1]{fontenc}
+\usepackage[brazil]{babel}
+\usepackage[top=3cm,left=3cm,bottom=2cm,right=2cm]{geometry}
+\usepackage{mathptmx}
+\usepackage{inconsolata}
+\usepackage{setspace}
+\usepackage{indentfirst}
+\usepackage{titlesec}
+\usepackage{booktabs}
+\usepackage{array}
+\usepackage{listings}
+\usepackage{xcolor}
+\usepackage{xurl}
+\urlstyle{same}
+
+\onehalfspacing
+\setlength{\parindent}{1.25cm}
+
+\titleformat*{\section}{\normalfont\bfseries\normalsize}
+\titleformat*{\subsection}{\normalfont\bfseries\normalsize}
+
+\lstset{
+    basicstyle=\ttfamily\footnotesize,
+    breaklines=true,
+    columns=fullflexible,
+    keepspaces=true,
+    frame=single,
+    rulecolor=\color{black!25},
+    backgroundcolor=\color{black!4},
+    xleftmargin=0.2cm,
+    xrightmargin=0.2cm,
+    framexleftmargin=4pt,
+    framexrightmargin=4pt,
+    framextopmargin=4pt,
+    framexbottommargin=4pt,
+    literate=
+        {á}{{\'a}}1 {é}{{\'e}}1 {í}{{\'i}}1 {ó}{{\'o}}1 {ú}{{\'u}}1
+        {Á}{{\'A}}1 {É}{{\'E}}1 {Í}{{\'I}}1 {Ó}{{\'O}}1 {Ú}{{\'U}}1
+        {ã}{{\~a}}1 {õ}{{\~o}}1 {Ã}{{\~A}}1 {Õ}{{\~O}}1
+        {â}{{\^a}}1 {ê}{{\^e}}1 {ô}{{\^o}}1
+        {à}{{\`a}}1 {ç}{{\c{c}}}1 {Ç}{{\c{C}}}1
+}
+
+\begin{document}
+
+\section{Questão 09: Sistema de recomendação de livros com OWL 2}
+
+\subsection{Domínio e base de conhecimento}
+
+O sistema usa uma ontologia OWL 2 para recomendar livros de um catálogo fictício. O perfil informa gênero e idioma e pode restringir o nível de leitura e o número de páginas. A ontologia contém 12 classes, 17 propriedades e 21 indivíduos, incluindo seis livros. O arquivo biblioteca.owl está em RDF/XML e pode ser aberto no Protégé.
+
+\begin{table}[htbp]
+    \centering
+    \begin{tabular}{>{\raggedright\arraybackslash}p{5.8cm} >{\raggedright\arraybackslash}p{9.0cm}}
+        \toprule
+        \textbf{Classes} & \textbf{Papel no catálogo} \\
+        \midrule
+        Livro, Romance e Coletanea & Livro é a superclasse. Romance e Coletanea distinguem formas literárias. \\
+        \addlinespace
+        LivroFiccaoCientifica e LeituraIntrodutoria & Subclasses definidas por gênero e nível, classificadas automaticamente. \\
+        \addlinespace
+        Leitor, Autor e Editora & Representam o perfil, a autoria e a publicação. \\
+        \addlinespace
+        Genero, Tema, Idioma e Nivel & Representam características reutilizadas entre livros e preferências. \\
+        \bottomrule
+    \end{tabular}
+\end{table}
+
+\subsection{Propriedades e axiomas}
+
+\begin{table}[htbp]
+    \centering
+    \begin{tabular}{>{\raggedright\arraybackslash}p{4.5cm} >{\raggedright\arraybackslash}p{10.3cm}}
+        \toprule
+        \textbf{Grupo} & \textbf{Propriedades e finalidade} \\
+        \midrule
+        Classificação e assunto & temGenero, temGeneroPrincipal, temTema e generoAbordaTema associam livros a categorias e temas. \\
+        \addlinespace
+        Catálogo e preferências & temAutor, escreveu, temIdioma, temNivel, publicadoPor, prefereGenero e prefereIdioma ligam as entidades do catálogo. \\
+        \addlinespace
+        Atributos & titulo, codigoCatalogo, sinopse, paginas, anoPublicacao e nomeAutor armazenam os valores usados na identificação, nos filtros e na exibição. \\
+        \bottomrule
+    \end{tabular}
+\end{table}
+
+Livro exige ao menos um gênero principal, um idioma e um nível. As três propriedades são funcionais, o que limita cada uma a um valor distinto por livro. temGeneroPrincipal especializa temGenero. temAutor e escreveu são inversas. As classes Livro, Leitor, Autor, Genero, Tema, Idioma, Nivel e Editora são mutuamente disjuntas. Romance e Coletanea também são disjuntas [1].
+
+\subsection{Inferências de exemplo}
+
+LivroFiccaoCientifica equivale a Livro com temGenero igual a FiccaoCientifica. LeituraIntrodutoria equivale a Livro com temNivel igual a Iniciante. O HermiT classificou Órbita nas duas classes usando os fatos do catálogo. Também inferiu que Órbita temTema Tecnologia, pois seu gênero principal aborda esse tema. O axioma de cadeia é temGeneroPrincipal seguido de generoAbordaTema implica temTema [1, 2].
+
+\subsection{Consulta semântica e recomendação}
+
+O programa cria um perfil temporário e executa HermiT para verificar a consistência e inferir classes e relações. A consulta SPARQL cruza gênero e idioma preferidos com o catálogo e exige que o livro possua o tema associado ao gênero. Esse último vínculo foi inferido pela cadeia de propriedades. No exemplo abaixo, b:PerfilConsulta é o indivíduo criado pelo programa.
+
+\begin{lstlisting}
+PREFIX b: <https://example.org/biblioteca#>
+SELECT DISTINCT ?livro ?genero ?idioma WHERE {
+    b:PerfilConsulta b:prefereGenero ?genero ;
+                      b:prefereIdioma ?idioma .
+    ?genero b:generoAbordaTema ?tema .
+    ?livro b:temGeneroPrincipal ?genero ;
+           b:temIdioma ?idioma ; b:temTema ?tema .
+}
+\end{lstlisting}
+
+A aplicação aplica os filtros de nível e páginas aos candidatos e ordena os resultados pelo menor número de páginas, com desempate por título. Cada indicação informa gênero, idioma, nível, páginas, autoria e temas inferidos. Os critérios de ordenação pertencem à aplicação. A classificação e os temas decorrem dos axiomas.
+
+\subsection{Resultados e verificação de consistência}
+
+\begin{table}[htbp]
+    \centering
+    \begin{tabular}{>{\raggedright\arraybackslash}p{6.2cm} >{\raggedright\arraybackslash}p{8.6cm}}
+        \toprule
+        \textbf{Entrada} & \textbf{Resultado verificado} \\
+        \midrule
+        Ficção científica, português, iniciante, até 200 páginas & Órbita, 164 páginas, Lia Costa, tema Tecnologia. A consulta retornou zero livros antes da inferência. \\
+        \addlinespace
+        Fantasia, português, intermediário & Mapa das Brumas, 201 páginas, Iara Dias, tema Magia. \\
+        \addlinespace
+        Mistério, inglês & Nenhuma correspondência no catálogo. \\
+        \addlinespace
+        Órbita declarada como Autor na memória & HermiT detectou a contradição com a disjunção entre Livro e Autor. O arquivo OWL permaneceu intacto. \\
+        \bottomrule
+    \end{tabular}
+\end{table}
+
+\subsection{Análise e execução}
+
+A ontologia torna explícitas as justificativas e permite reaproveitar o catálogo em outras consultas. Sob a hipótese de mundo aberto, faltar uma informação não implica sua negação. Por isso, os resultados correspondem aos livros com evidências suficientes para satisfazer os filtros. A cobertura depende dos dados e o custo de raciocínio cresce com a quantidade e a complexidade dos axiomas.
+
+Na pasta da questão, instale \texttt{python -m pip install -r requirements.txt} e use um Java disponível no PATH ou passe seu caminho com \texttt{-{}-java}. A apresentação de demonstração inclui os comandos e o teste de inconsistência.
+
+\section*{Referências}
+
+\noindent [1] W3C. \textbf{OWL 2 Web Ontology Language Primer}. Disponível em: \url{https://www.w3.org/TR/owl2-primer/}.
+
+\noindent [2] OWLREADY2. \textbf{Reasoning}. Disponível em: \url{https://owlready2.readthedocs.io/en/latest/reasoning.html}.
+
+\end{document}

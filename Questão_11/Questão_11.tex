@@ -1,0 +1,130 @@
+\documentclass[12pt,a4paper]{article}
+
+\usepackage[utf8]{inputenc}
+\usepackage[T1]{fontenc}
+\usepackage[brazil]{babel}
+\usepackage[top=3cm,left=3cm,bottom=2cm,right=2cm]{geometry}
+\usepackage{mathptmx}
+\usepackage{inconsolata}
+\usepackage{setspace}
+\usepackage{indentfirst}
+\usepackage{titlesec}
+\usepackage{booktabs}
+\usepackage{array}
+\usepackage{listings}
+\usepackage{xcolor}
+
+\onehalfspacing
+\setlength{\parindent}{1.25cm}
+
+\titleformat*{\section}{\normalfont\bfseries\normalsize}
+\titleformat*{\subsection}{\normalfont\bfseries\normalsize}
+
+\lstset{
+    basicstyle=\ttfamily\footnotesize,
+    breaklines=true,
+    columns=fullflexible,
+    keepspaces=true,
+    frame=single,
+    rulecolor=\color{black!25},
+    backgroundcolor=\color{black!4},
+    xleftmargin=0.2cm,
+    xrightmargin=0.2cm,
+    framexleftmargin=4pt,
+    framexrightmargin=4pt,
+    framextopmargin=4pt,
+    framexbottommargin=4pt,
+    literate=
+        {á}{{\'a}}1 {é}{{\'e}}1 {í}{{\'i}}1 {ó}{{\'o}}1 {ú}{{\'u}}1
+        {Á}{{\'A}}1 {É}{{\'E}}1 {Í}{{\'I}}1 {Ó}{{\'O}}1 {Ú}{{\'U}}1
+        {ã}{{\~a}}1 {õ}{{\~o}}1 {Ã}{{\~A}}1 {Õ}{{\~O}}1
+        {â}{{\^a}}1 {ê}{{\^e}}1 {ô}{{\^o}}1
+        {à}{{\`a}}1 {ç}{{\c{c}}}1 {Ç}{{\c{C}}}1
+}
+
+\begin{document}
+
+\section{Questão 11: Agentes clássicos e agentes com modelos de linguagem}
+
+\subsection{Formulação do problema}
+
+O assistente precisa planejar as atividades de um professor entre 14h e 18h. O recurso compartilhado é o tempo de uma única pessoa, por isso as atividades não podem se sobrepor. A reunião tem horário fixo. Adotamos tarefas indivisíveis e atribuímos utilidade somente a tarefas concluídas hoje. Como o enunciado fornece prioridades qualitativas, usamos pesos didáticos de 10, 5 e 1 para prioridades alta, média e baixa.
+
+\begin{table}[htbp]
+    \centering
+    \begin{tabular}{>{\raggedright\arraybackslash}p{5.5cm} >{\raggedright\arraybackslash}p{2.2cm} >{\raggedright\arraybackslash}p{3.8cm} >{\raggedright\arraybackslash}p{2.2cm}}
+        \toprule
+        \textbf{Tarefa} & \textbf{Duração} & \textbf{Prazo ou horário} & \textbf{Utilidade} \\
+        \midrule
+        A - Preparar aula de IA & 90 min & Hoje & 10 \\
+        \addlinespace
+        B - Corrigir trabalhos & 120 min & Até amanhã & 5 \\
+        \addlinespace
+        C - Reunião de pesquisa & 60 min & Hoje, 16h--17h & 10 \\
+        \addlinespace
+        D - Revisar artigo & 60 min & Próxima semana & 1 \\
+        \bottomrule
+    \end{tabular}
+\end{table}
+
+\subsection{Solução com agente clássico}
+
+Na concepção de Russell e Norvig [1], um agente percebe o ambiente e age sobre ele. Aqui, o agente recebe tarefas e horários em campos estruturados, mantém o estado da agenda e devolve um plano. A arquitetura é baseada em utilidade: busca uma combinação viável que maximize a soma dos pesos das tarefas concluídas. A reunião é obrigatória. O verificador confere duração, janela de trabalho, compromisso fixo e ausência de sobreposição.
+
+Em \texttt{planejamento.py}, o agente enumera os subconjuntos e ordens das tarefas opcionais e testa os cortes que as distribuem antes e depois da reunião. Basta compactar cada sequência no início do bloco correspondente, pois não há horários mínimos de início dentro dos blocos. A reunião deixa 120 minutos antes e 60 minutos depois. A e B competem pelo primeiro bloco, pois nenhuma cabe no segundo. D cabe depois da reunião. A, C e D somam 21 pontos, acima dos 16 de B, C e D.
+
+\begin{table}[htbp]
+    \centering
+    \begin{tabular}{>{\raggedright\arraybackslash}p{3.6cm} >{\raggedright\arraybackslash}p{7.5cm}}
+        \toprule
+        \textbf{Horário} & \textbf{Atividade} \\
+        \midrule
+        14h00--15h30 & A - Preparar aula \\
+        \addlinespace
+        15h30--16h00 & Intervalo livre \\
+        \addlinespace
+        16h00--17h00 & C - Reunião \\
+        \addlinespace
+        17h00--18h00 & D - Revisar artigo \\
+        \bottomrule
+    \end{tabular}
+\end{table}
+
+B fica pendente porque requer duas horas contíguas, e reservar o primeiro bloco para B impediria concluir a aula urgente. O assistente deve procurar uma janela de 120 minutos até amanhã e sinalizar o prazo se não conhecer a disponibilidade. Ele não pressupõe que esse horário exista.
+
+\subsection{Solução com agente baseado em LLM}
+
+O modelo de linguagem recebe o pedido em texto e extrai tarefas, duração, prioridade, prazo e compromissos fixos. Por exemplo, converte ``preciso participar de uma reunião às 16h'' em uma tarefa com início fixo. Quando a duração, a possibilidade de divisão ou outro dado relevante estiver ausente, o assistente consulta o calendário ou pede esclarecimento. A arquitetura com LLM pode alternar entre interpretação e chamadas de ferramenta, como exemplificado pela abordagem ReAct [2].
+
+A solução com LLM foi implementada em \texttt{agenda.py}, na pasta da questão 12. Execute \texttt{python agenda.py} nessa pasta com o Ollama ativo e use o pedido documentado na seção 12.3. O modelo extrai os dados e os apresenta para confirmação. O planejador em Python calcula a agenda a partir da janela de 14h a 18h, dos pesos e das restrições. No teste, as duas soluções produziram o plano de 21 pontos, com B pendente. Uma consulta ao calendário de amanhã poderia ajudar a procurar uma janela de duas horas para B.
+
+\subsection{Comparação e mecanismos de verificação}
+
+\begin{table}[htbp]
+    \centering
+    \begin{tabular}{>{\raggedright\arraybackslash}p{2.7cm} >{\raggedright\arraybackslash}p{5.8cm} >{\raggedright\arraybackslash}p{6.0cm}}
+        \toprule
+        \textbf{Aspecto} & \textbf{Agente clássico} & \textbf{Agente com LLM} \\
+        \midrule
+        Entrada & Campos definidos de duração, prazo, prioridade e recursos. & Interpreta solicitações em linguagem natural e transforma o pedido em campos. \\
+        \addlinespace
+        Planejamento & Calcula o melhor plano para as restrições e pesos declarados. & Pode propor ações e consultar ferramentas. Um planejador explícito garante o ótimo neste modelo. \\
+        \addlinespace
+        Adaptação & Recalcula quando recebe novas restrições em formato estruturado. & Entende mudanças formuladas em texto e encaminha dados atualizados ao planejador. \\
+        \addlinespace
+        Verificação & Testa condições e calcula a utilidade de cada plano viável. & Usa verificação externa para impedir conflitos e conferir as ações propostas. \\
+        \bottomrule
+    \end{tabular}
+\end{table}
+
+O LLM oferece vantagem quando as solicitações chegam em linguagem livre, misturam prazos e preferências ou mudam ao longo da conversa. Pode, por exemplo, interpretar ``amanhã de manhã só tenho uma hora livre'' e pedir a confirmação de outro horário para B. O ganho está na interpretação e na comunicação. A viabilidade exige checagens explícitas, e a otimalidade exige um método que compare os planos segundo a função de utilidade.
+
+Um plano aparentemente razoável poderia colocar B das 15h30 às 17h30. A duração estaria correta, mas haveria conflito com a reunião. O verificador rejeitaria esse intervalo. Para publicar compromissos, o agente também precisa confirmar que a agenda consultada continua atual e que tem autorização para gravá-los.
+
+\section*{Referências}
+
+\noindent [1] RUSSELL, S. J.; NORVIG, P. \textbf{Artificial Intelligence: A Modern Approach}, cap. 2. Disponível em: https://aima.cs.berkeley.edu/4th-ed/pdfs/newchap02.pdf.
+
+\noindent [2] YAO, S. et al. \textbf{ReAct: Synergizing Reasoning and Acting in Language Models}. 2023. Disponível em: https://arxiv.org/abs/2210.03629.
+
+\end{document}

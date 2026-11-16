@@ -1,0 +1,129 @@
+\documentclass[12pt,a4paper]{article}
+
+\usepackage[utf8]{inputenc}
+\usepackage[T1]{fontenc}
+\usepackage[brazil]{babel}
+\usepackage[top=3cm,left=3cm,bottom=2cm,right=2cm]{geometry}
+\usepackage{mathptmx}
+\usepackage{inconsolata}
+\usepackage{setspace}
+\usepackage{indentfirst}
+\usepackage{titlesec}
+\usepackage{booktabs}
+\usepackage{array}
+\usepackage{listings}
+\usepackage{xcolor}
+\usepackage{xurl}
+\urlstyle{same}
+
+\onehalfspacing
+\setlength{\parindent}{1.25cm}
+
+\titleformat*{\section}{\normalfont\bfseries\normalsize}
+\titleformat*{\subsection}{\normalfont\bfseries\normalsize}
+
+\lstset{
+    basicstyle=\ttfamily\footnotesize,
+    breaklines=true,
+    columns=fullflexible,
+    keepspaces=true,
+    frame=single,
+    rulecolor=\color{black!25},
+    backgroundcolor=\color{black!4},
+    xleftmargin=0.2cm,
+    xrightmargin=0.2cm,
+    framexleftmargin=4pt,
+    framexrightmargin=4pt,
+    framextopmargin=4pt,
+    framexbottommargin=4pt,
+    literate=
+        {á}{{\'a}}1 {é}{{\'e}}1 {í}{{\'i}}1 {ó}{{\'o}}1 {ú}{{\'u}}1
+        {Á}{{\'A}}1 {É}{{\'E}}1 {Í}{{\'I}}1 {Ó}{{\'O}}1 {Ú}{{\'U}}1
+        {ã}{{\~a}}1 {õ}{{\~o}}1 {Ã}{{\~A}}1 {Õ}{{\~O}}1
+        {â}{{\^a}}1 {ê}{{\^e}}1 {ô}{{\^o}}1
+        {à}{{\`a}}1 {ç}{{\c{c}}}1 {Ç}{{\c{C}}}1
+}
+
+\begin{document}
+
+\section{Questão 07: Sistema de apoio ao diagnóstico baseado em casos}
+
+O protótipo recebe sintomas separados por vírgula, recupera casos semelhantes e pode reutilizar o diagnóstico e o tratamento registrados em um deles. O operador revisa a hipótese antes de gravar a nova experiência. O sistema usa casos fictícios para demonstrar o ciclo de raciocínio baseado em casos (RBC) de Aamodt e Plaza [1].
+
+\subsection{Base de casos e representação}
+
+O arquivo \texttt{casos.json} contém 15 casos iniciais. Cada registro tem identificador, lista de sintomas observados, diagnóstico e tratamento registrado. Na primeira execução, o programa carrega os registros em um banco SQLite. Casos retidos são gravados nesse banco e ficam disponíveis em novas sessões.
+
+\begin{table}[htbp]
+    \centering
+    \begin{tabular}{>{\raggedright\arraybackslash}p{3.8cm} >{\raggedright\arraybackslash}p{2.0cm} >{\raggedright\arraybackslash}p{8.7cm}}
+        \toprule
+        \textbf{Diagnóstico} & \textbf{Casos} & \textbf{Exemplos de sintomas representados} \\
+        \midrule
+        Resfriado comum & C01--C03 & Coriza, espirros, dor de garganta e tosse. \\
+        \addlinespace
+        Influenza & C04--C06 & Febre, tosse, dor muscular e fadiga. \\
+        \addlinespace
+        Rinite alérgica & C07--C09 & Espirros, coceira no nariz e olhos lacrimejantes. \\
+        \addlinespace
+        Enxaqueca & C10--C12 & Dor de cabeça, náusea e sensibilidade à luz. \\
+        \addlinespace
+        Gastroenterite viral & C13--C15 & Diarreia, vômito e dor abdominal. \\
+        \bottomrule
+    \end{tabular}
+\end{table}
+
+Por exemplo, C04 associa febre, tosse, dor muscular e fadiga ao rótulo Influenza. O tratamento registrado para esse caso fictício inclui repouso, hidratação e avaliação clínica. Os exemplos foram construídos a partir de descrições gerais dos quadros [2].
+
+\subsection{Recuperação por similaridade de Jaccard}
+
+O programa compara conjuntos de sintomas após normalizar espaços, caixa e acentos e remover duplicatas. Dados o conjunto da consulta $Q$ e o conjunto de um caso $C$, a similaridade divide a quantidade de sintomas em comum pela quantidade de sintomas distintos na união.
+
+\[
+J(Q, C) = |Q \cap C| / |Q \cup C|
+\]
+
+O escore varia de 0, quando os conjuntos são disjuntos, a 1, quando são iguais. O programa ordena os resultados por escore decrescente e pelo número do caso em caso de empate. Exibe até três resultados positivos e inclui os demais casos empatados na primeira posição.
+
+\subsection{Reutilização, revisão e retenção}
+
+\textbf{Reutilização.} Quando os melhores vizinhos concordam no diagnóstico, o programa usa o diagnóstico e o tratamento do primeiro colocado. Empate no topo entre diagnósticos distintos ou ausência de sintomas em comum deixa a decisão para a revisão.
+
+\textbf{Revisão.} O operador pode validar a hipótese, informar um diagnóstico e um tratamento revisados ou descartar a consulta. A validação no protótipo é uma decisão do operador da simulação.
+
+\textbf{Retenção.} Ao confirmar a gravação, o programa associa os sintomas da consulta à solução revisada, cria um identificador e insere o caso no SQLite. As próximas consultas já podem recuperá-lo.
+
+\subsection{Consultas e resultados}
+
+\begin{table}[htbp]
+    \centering
+    \begin{tabular}{>{\raggedright\arraybackslash}p{4.6cm} >{\raggedright\arraybackslash}p{10.2cm}}
+        \toprule
+        \textbf{Sintomas informados} & \textbf{Resultado observado} \\
+        \midrule
+        Febre, tosse e dor muscular. & C04 liderou com 3/4 = 75\%. C05 e C06 ficaram com 2/5 = 40\%. O protótipo sugeriu Influenza e exibiu o tratamento de C04. \\
+        \addlinespace
+        Coriza e espirros. & C01 e C07 empataram com 2/4 = 50\%, com diagnósticos diferentes. O operador registrou Rinite alérgica na revisão e gravou C16. \\
+        \addlinespace
+        CORÍZA, espirros, espirros, após reiniciar. & A base foi reaberta com 16 casos. C16 liderou com 2/2 = 100\%. Acentos, caixa e duplicatas não alteraram a comparação. \\
+        \addlinespace
+        Sintoma fictício ausente da base. & Nenhum vizinho teve escore positivo. O sistema não gerou hipótese automática. \\
+        \bottomrule
+    \end{tabular}
+\end{table}
+
+Na primeira consulta, os três sintomas informados estão em C04. A união contém quatro termos porque C04 também registra fadiga. Na segunda, dois quadros distintos compartilham o mesmo par de sintomas, o que demonstra por que o sistema encaminha o empate para revisão.
+
+\subsection{Análise e execução}
+
+Os testes verificam a recuperação, a revisão e a persistência. A similaridade mede sobreposição de sintomas, sem ponderar gravidade, duração ou exames. O escore de 100\% de C16 indica igualdade entre conjuntos de termos e não estima a probabilidade do diagnóstico. A base reduzida e fictícia limita o protótipo ao uso acadêmico.
+
+Na pasta da questão, execute \texttt{python diagnostico\_rbc.py}. O arquivo Demonstracao.md inclui as entradas e saídas capturadas em duas sessões com um banco separado.
+
+\section*{Referências}
+
+\noindent [1] AAMODT, A.; PLAZA, E. \textbf{Case-Based Reasoning: Foundational Issues, Methodological Variations, and System Approaches}. AI Communications, 1994. Disponível em: \url{https://doi.org/10.3233/AIC-1994-7104}.
+
+\noindent [2] MEDLINEPLUS. \textbf{Resfriado, influenza, rinite alérgica, enxaqueca e gastroenterite}. Disponível em: \url{https://medlineplus.gov/commoncold.html}, \url{https://medlineplus.gov/flu.html}, \url{https://medlineplus.gov/ency/article/000813.htm}, \url{https://medlineplus.gov/migraine.html} e \url{https://medlineplus.gov/gastroenteritis.html}.
+
+\end{document}

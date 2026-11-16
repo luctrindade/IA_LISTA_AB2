@@ -1,0 +1,119 @@
+\documentclass[12pt,a4paper]{article}
+
+\usepackage[utf8]{inputenc}
+\usepackage[T1]{fontenc}
+\usepackage[brazil]{babel}
+\usepackage[top=3cm,left=3cm,bottom=2cm,right=2cm]{geometry}
+\usepackage{mathptmx}
+\usepackage{inconsolata}
+\usepackage{setspace}
+\usepackage{indentfirst}
+\usepackage{titlesec}
+\usepackage{booktabs}
+\usepackage{array}
+\usepackage{listings}
+\usepackage{xcolor}
+\usepackage{xurl}
+\urlstyle{same}
+
+\onehalfspacing
+\setlength{\parindent}{1.25cm}
+
+\titleformat*{\section}{\normalfont\bfseries\normalsize}
+\titleformat*{\subsection}{\normalfont\bfseries\normalsize}
+
+\lstset{
+    basicstyle=\ttfamily\footnotesize,
+    breaklines=true,
+    columns=fullflexible,
+    keepspaces=true,
+    frame=single,
+    rulecolor=\color{black!25},
+    backgroundcolor=\color{black!4},
+    xleftmargin=0.2cm,
+    xrightmargin=0.2cm,
+    framexleftmargin=4pt,
+    framexrightmargin=4pt,
+    framextopmargin=4pt,
+    framexbottommargin=4pt,
+    literate=
+        {á}{{\'a}}1 {é}{{\'e}}1 {í}{{\'i}}1 {ó}{{\'o}}1 {ú}{{\'u}}1
+        {Á}{{\'A}}1 {É}{{\'E}}1 {Í}{{\'I}}1 {Ó}{{\'O}}1 {Ú}{{\'U}}1
+        {ã}{{\~a}}1 {õ}{{\~o}}1 {Ã}{{\~A}}1 {Õ}{{\~O}}1
+        {â}{{\^a}}1 {ê}{{\^e}}1 {ô}{{\^o}}1
+        {à}{{\`a}}1 {ç}{{\c{c}}}1 {Ç}{{\c{C}}}1
+}
+
+\begin{document}
+
+\section{Questão 12 --- Agente com LLM para planejamento acadêmico}
+
+\subsection{Aplicação e interface}
+
+O assistente monta a agenda de um professor para um dia. O usuário descreve em português a janela disponível, as tarefas, suas durações, prioridades e compromissos fixos. O agente pede esclarecimentos quando faltam dados. Antes de calcular, mostra a interpretação para que o usuário possa corrigir os dados ou confirmar o cálculo.
+
+\begin{table}[htbp]
+    \centering
+    \begin{tabular}{>{\raggedright\arraybackslash}p{4.5cm} >{\raggedright\arraybackslash}p{10.3cm}}
+        \toprule
+        \textbf{Componente} & \textbf{Função} \\
+        \midrule
+        Interface em linguagem natural & Recebe o pedido e seus complementos no terminal. Exibe as tarefas interpretadas, o plano e as pendências. \\
+        \addlinespace
+        Inferência do LLM & O modelo local, servido pelo Ollama, converte o pedido em JSON conforme um esquema. Extrai janela, duração, prioridade, prazo e início fixo [1]. \\
+        \addlinespace
+        Planejador em Python & Confere valores e conflitos, separa a janela em blocos livres e calcula a agenda de maior utilidade. \\
+        \addlinespace
+        Explicabilidade & Mostra a utilidade total, os horários, a prioridade de cada tarefa selecionada e o motivo das pendências. \\
+        \bottomrule
+    \end{tabular}
+\end{table}
+
+\subsection{Planejamento e critérios}
+
+Cada compromisso fixo é obrigatório. O cálculo é interrompido se houver sobreposição, horário fora da janela ou compromisso fixo que termine após seu limite. As tarefas flexíveis só entram no plano se couberem inteiras em um bloco e terminarem até a hora-limite, se houver.
+
+O planejador compara as sequências possíveis dentro de cada bloco. Em cada passo pode colocar uma tarefa no início do espaço restante ou passar ao próximo bloco. Guarda o melhor resultado para estados já visitados, definidos pelo bloco, pelo horário e pelas tarefas restantes. Como as tarefas flexíveis podem começar a qualquer momento em seu bloco, compactar cada sequência à esquerda preserva a viabilidade.
+
+A utilidade é a soma dos pesos das tarefas concluídas. As prioridades alta, média e baixa valem 10, 5 e 1. Em empate, o agente favorece o plano que conclui mais tarefas com prazo para hoje. O prazo de amanhã aparece na pendência para orientar o próximo planejamento.
+
+O usuário pode indicar uma hora-limite para uma tarefa no dia planejado. Por exemplo, se um relatório de 60 minutos vence às 15h e a única janela livre começa às 15h, o sistema deixa o relatório pendente e informa que nenhum bloco o comporta até o horário solicitado.
+
+\subsection{Demonstração do cenário da questão 11}
+
+\noindent Pedido de exemplo
+
+``Tenho das 14h às 18h. Preciso preparar uma aula de IA hoje em 90 minutos, prioridade alta, corrigir trabalhos em 120 minutos até amanhã, prioridade média, e participar de uma reunião de pesquisa das 16h às 17h, prioridade alta. Também tenho um artigo para revisar em 60 minutos até a próxima semana, prioridade baixa.''
+
+\begin{table}[htbp]
+    \centering
+    \begin{tabular}{>{\raggedright\arraybackslash}p{3.6cm} >{\raggedright\arraybackslash}p{9.5cm}}
+        \toprule
+        \textbf{Horário} & \textbf{Resultado} \\
+        \midrule
+        14h00--15h30 & Preparar aula de IA (10 pontos). \\
+        \addlinespace
+        15h30--16h00 & Tempo livre na agenda. \\
+        \addlinespace
+        16h00--17h00 & Reunião de pesquisa (10 pontos), horário fixo. \\
+        \addlinespace
+        17h00--18h00 & Revisar artigo (1 ponto). \\
+        \addlinespace
+        Pendente & Corrigir trabalhos. Prazo até amanhã. \\
+        \bottomrule
+    \end{tabular}
+\end{table}
+
+A correção exige duas horas seguidas. Só há um bloco desse tamanho, antes da reunião, e ele também é o único que comporta a aula. Ao usar esse bloco para a aula, a utilidade do plano passa de 16 para 21 pontos. Os 30 minutos livres antes da reunião são insuficientes para a correção. A justificativa combina os dados de duração, horários fixos e pesos do planejamento.
+
+\subsection{Execução e limites}
+
+Em um computador com Python e Ollama disponíveis, baixe o modelo com \texttt{ollama pull qwen2.5:3b}. Com o serviço local em execução, rode \texttt{python agenda.py} na pasta da questão e digite o pedido. O argumento \texttt{-{}-modelo} permite selecionar outro modelo já instalado.
+
+O comando \texttt{python agenda.py -{}-demo} reproduz o resultado da tabela com dados estruturados de exemplo. A execução do modelo exige um servidor Ollama ativo. O escopo cobre um dia, até oito tarefas e um recurso, o tempo do professor. A confirmação da interpretação permite identificar erros de extração antes de montar a agenda.
+
+\section*{Referências}
+
+\noindent [1] OLLAMA. \textbf{Structured Outputs}. Documentação oficial. Disponível em: \url{https://docs.ollama.com/capabilities/structured-outputs}.
+
+\end{document}

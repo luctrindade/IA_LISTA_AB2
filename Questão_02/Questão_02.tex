@@ -1,0 +1,189 @@
+\documentclass[12pt,a4paper]{article}
+
+\usepackage[utf8]{inputenc}
+\usepackage[T1]{fontenc}
+\usepackage[brazil]{babel}
+\usepackage[top=3cm,left=3cm,bottom=2cm,right=2cm]{geometry}
+\usepackage{mathptmx}
+\usepackage{inconsolata}
+\usepackage{setspace}
+\usepackage{indentfirst}
+\usepackage{titlesec}
+\usepackage{booktabs}
+\usepackage{array}
+\usepackage{listings}
+\usepackage{xcolor}
+\usepackage{amsmath}
+\usepackage{float}
+
+\onehalfspacing
+\setlength{\parindent}{1.25cm}
+
+\titleformat*{\section}{\normalfont\bfseries\normalsize}
+\titleformat*{\subsection}{\normalfont\bfseries\normalsize}
+\titleformat*{\subsubsection}{\normalfont\bfseries\normalsize}
+
+\lstset{
+    basicstyle=\ttfamily\footnotesize,
+    breaklines=true,
+    columns=fullflexible,
+    keepspaces=true,
+    frame=single,
+    rulecolor=\color{black!25},
+    backgroundcolor=\color{black!4},
+    xleftmargin=0.2cm,
+    xrightmargin=0.2cm,
+    framexleftmargin=4pt,
+    framexrightmargin=4pt,
+    framextopmargin=4pt,
+    framexbottommargin=4pt,
+    literate=
+        {á}{{\'a}}1 {é}{{\'e}}1 {í}{{\'i}}1 {ó}{{\'o}}1 {ú}{{\'u}}1
+        {Á}{{\'A}}1 {É}{{\'E}}1 {Í}{{\'I}}1 {Ó}{{\'O}}1 {Ú}{{\'U}}1
+        {ã}{{\~a}}1 {õ}{{\~o}}1 {Ã}{{\~A}}1 {Õ}{{\~O}}1
+        {â}{{\^a}}1 {ê}{{\^e}}1 {ô}{{\^o}}1
+        {à}{{\`a}}1 {ç}{{\c{c}}}1 {Ç}{{\c{C}}}1
+}
+
+\begin{document}
+
+\section{Questão 02: K-vizinhos mais próximos (KNN)}
+
+\subsection{Base de dados}
+
+A base de risco de crédito utilizada na primeira lista contém 30 instâncias. O KNN compara seis atributos preditivos: história de crédito, dívida, garantia, faixa de renda, emprego e faixa etária. Exemplo é o identificador de cada linha e Risco é a classe a prever. Há 11 casos de risco Alto, 9 de risco Moderado e 10 de risco Baixo.
+
+\begin{table}[H]
+    \centering
+    \caption{Instâncias utilizadas na classificação}
+    \setlength{\tabcolsep}{1.5pt}
+    \renewcommand{\arraystretch}{0.92}
+    \begin{tabular}{>{\raggedright\arraybackslash}p{1.60cm} >{\raggedright\arraybackslash}p{2.35cm} >{\raggedright\arraybackslash}p{1.25cm} >{\raggedright\arraybackslash}p{1.70cm} >{\raggedright\arraybackslash}p{2.65cm} >{\raggedright\arraybackslash}p{2.55cm} >{\raggedright\arraybackslash}p{1.20cm} >{\raggedright\arraybackslash}p{1.75cm}}
+        \toprule
+        \textbf{Exemplo} & \textbf{História de crédito} & \textbf{Dívida} & \textbf{Garantia} & \textbf{Renda} & \textbf{Emprego} & \textbf{Idade} & \textbf{Risco} \\
+        \midrule
+        E1 & Ruim & Alta & Nenhuma & \$0 a \$15k & Fixo & Adulto & Alto \\
+        E2 & Desconhecida & Alta & Nenhuma & \$15k a \$35k & Autônomo & Jovem & Alto \\
+        E3 & Desconhecida & Baixa & Nenhuma & \$15k a \$35k & Fixo & Jovem & Moderado \\
+        E4 & Desconhecida & Baixa & Nenhuma & \$0 a \$15k & Desempregado & Adulto & Alto \\
+        E5 & Desconhecida & Baixa & Nenhuma & Acima de \$35k & Fixo & Adulto & Baixo \\
+        E6 & Desconhecida & Baixa & Adequada & Acima de \$35k & Fixo & Adulto & Baixo \\
+        E7 & Ruim & Baixa & Nenhuma & \$0 a \$15k & Autônomo & Jovem & Alto \\
+        E8 & Ruim & Baixa & Adequada & Acima de \$35k & Fixo & Adulto & Moderado \\
+        E9 & Boa & Baixa & Nenhuma & Acima de \$35k & Fixo & Jovem & Baixo \\
+        E10 & Boa & Alta & Adequada & Acima de \$35k & Fixo & Adulto & Baixo \\
+        E11 & Boa & Alta & Nenhuma & \$0 a \$15k & Autônomo & Jovem & Alto \\
+        E12 & Boa & Alta & Nenhuma & \$15k a \$35k & Fixo & Jovem & Moderado \\
+        E13 & Boa & Alta & Nenhuma & Acima de \$35k & Fixo & Adulto & Baixo \\
+        E14 & Ruim & Alta & Nenhuma & \$15k a \$35k & Desempregado & Adulto & Alto \\
+        E15 & Boa & Baixa & Adequada & \$15k a \$35k & Fixo & Adulto & Baixo \\
+        E16 & Ruim & Alta & Nenhuma & \$0 a \$15k & Desempregado & Jovem & Alto \\
+        E17 & Desconhecida & Baixa & Adequada & \$15k a \$35k & Autônomo & Adulto & Moderado \\
+        E18 & Boa & Baixa & Nenhuma & Acima de \$35k & Fixo & Adulto & Baixo \\
+        E19 & Ruim & Alta & Adequada & \$15k a \$35k & Fixo & Adulto & Moderado \\
+        E20 & Desconhecida & Alta & Nenhuma & \$0 a \$15k & Desempregado & Adulto & Alto \\
+        E21 & Boa & Alta & Adequada & Acima de \$35k & Autônomo & Adulto & Baixo \\
+        E22 & Ruim & Baixa & Nenhuma & \$15k a \$35k & Fixo & Jovem & Moderado \\
+        E23 & Desconhecida & Baixa & Nenhuma & Acima de \$35k & Fixo & Adulto & Baixo \\
+        E24 & Ruim & Alta & Nenhuma & \$0 a \$15k & Autônomo & Jovem & Alto \\
+        E25 & Boa & Baixa & Adequada & \$0 a \$15k & Fixo & Adulto & Moderado \\
+        E26 & Desconhecida & Alta & Adequada & Acima de \$35k & Fixo & Jovem & Baixo \\
+        E27 & Boa & Baixa & Nenhuma & \$15k a \$35k & Autônomo & Jovem & Moderado \\
+        E28 & Ruim & Alta & Nenhuma & Acima de \$35k & Desempregado & Adulto & Alto \\
+        E29 & Desconhecida & Baixa & Adequada & \$0 a \$15k & Fixo & Adulto & Moderado \\
+        E30 & Boa & Alta & Nenhuma & \$0 a \$15k & Fixo & Jovem & Alto \\
+        \bottomrule
+    \end{tabular}
+\end{table}
+
+\subsection{Funcionamento do algoritmo}
+
+O KNN armazena os exemplos rotulados e, a cada consulta, calcula a distância entre o perfil recebido e os perfis da base de referência. A distância de Hamming soma 1 para cada atributo diferente e 0 para cada coincidência. Os seis atributos têm o mesmo peso e a distância varia de 0 a 6.
+
+\[
+d(x, y) = \text{número de atributos em que } x \text{ e } y \text{ diferem}
+\]
+
+Os registros são ordenados pela distância. Quando dois registros ficam à mesma distância, vem primeiro o de menor número no identificador. Os $k$ primeiros vizinhos votam, cada um com um voto para sua classe. Em caso de empate na votação, vence a classe cujo primeiro representante aparece mais cedo na lista ordenada.
+
+\subsection{Classificação manual de E1 com k = 5}
+
+E1 tem história Ruim, dívida Alta, garantia Nenhuma, renda de \$0 a \$15k, emprego Fixo e idade Adulto. Retiramos E1 da base de referência e comparamos seu perfil aos outros 29. E13 difere na história de crédito e na renda, portanto $d(\text{E1}, \text{E13}) = 1 + 0 + 0 + 1 + 0 + 0 = 2$.
+
+\begin{table}[H]
+    \centering
+    \caption{Cinco vizinhos selecionados pelo critério de desempate}
+    \begin{tabular}{>{\raggedright\arraybackslash}p{1.4cm} >{\raggedright\arraybackslash}p{1.6cm} >{\raggedright\arraybackslash}p{6.0cm} >{\raggedright\arraybackslash}p{1.8cm} >{\raggedright\arraybackslash}p{2.0cm}}
+        \toprule
+        \textbf{Ordem} & \textbf{Vizinho} & \textbf{Atributos diferentes de E1} & \textbf{Distância} & \textbf{Risco} \\
+        \midrule
+        1 & E13 & História de crédito e renda & 2 & Baixo \\
+        \addlinespace
+        2 & E14 & Renda e emprego & 2 & Alto \\
+        \addlinespace
+        3 & E16 & Emprego e idade & 2 & Alto \\
+        \addlinespace
+        4 & E19 & Garantia e renda & 2 & Moderado \\
+        \addlinespace
+        5 & E20 & História de crédito e emprego & 2 & Alto \\
+        \bottomrule
+    \end{tabular}
+\end{table}
+
+Oito registros ficaram à distância 2. Os cinco selecionados deram 3 votos para Alto, 1 para Moderado e 1 para Baixo. A previsão foi \textbf{Alto}, igual à classe registrada para E1.
+
+\subsection{Validação nas 30 instâncias}
+
+A validação \textit{leave-\allowbreak one-\allowbreak out} retira uma instância por rodada e usa as outras 29 para classifi\-cá-la. Após 30 rodadas para cada valor de $k$, a acurácia é a quantidade de acertos dividida por 30.
+
+\begin{table}[H]
+    \centering
+    \begin{tabular}{>{\raggedright\arraybackslash}p{1.5cm} >{\raggedright\arraybackslash}p{2.8cm} >{\raggedright\arraybackslash}p{2.8cm}}
+        \toprule
+        \textbf{k} & \textbf{Acertos} & \textbf{Acurácia} \\
+        \midrule
+        1 & 20 de 30 & 66,7\% \\
+        \addlinespace
+        3 & 20 de 30 & 66,7\% \\
+        \addlinespace
+        5 & 21 de 30 & 70,0\% \\
+        \addlinespace
+        7 & 21 de 30 & 70,0\% \\
+        \bottomrule
+    \end{tabular}
+\end{table}
+
+\subsubsection{Matriz de confusão e análise}
+
+Na matriz de confusão para $k = 5$, as linhas representam as classes registradas no CSV e as colunas representam as classes previstas. A diagonal contém os acertos.
+
+\begin{table}[H]
+    \centering
+    \begin{tabular}{>{\raggedright\arraybackslash}p{3.2cm} >{\raggedright\arraybackslash}p{2.2cm} >{\raggedright\arraybackslash}p{2.2cm} >{\raggedright\arraybackslash}p{2.2cm}}
+        \toprule
+        \textbf{Real / Previsto} & \textbf{Alto} & \textbf{Moderado} & \textbf{Baixo} \\
+        \midrule
+        Alto & 10 & 1 & 0 \\
+        \addlinespace
+        Moderado & 3 & 2 & 4 \\
+        \addlinespace
+        Baixo & 0 & 1 & 9 \\
+        \bottomrule
+    \end{tabular}
+\end{table}
+
+O KNN acertou 10 dos 11 casos de risco Alto e 9 dos 10 de risco Baixo. A classe Moderado apresentou o menor número de acertos: 2 de 9. Dos sete erros nessa classe, três casos foram previstos como Alto e quatro como Baixo.
+
+Os valores de $k$ foram comparados na mesma base, por isso os resultados são exploratórios. E5 e E23 têm os mesmos seis atributos. Quando um desses registros é retirado, o outro continua disponível como vizinho a distância zero. A acurácia também depende da regra usada para desempatar distâncias iguais.
+
+\subsection{Execução do programa em Python}
+
+O arquivo \textbf{knn.py} usa a biblioteca padrão do Python e lê o arquivo \textbf{arquivo.csv} da mesma pasta. O comando abaixo demonstra a classificação de E1 com cinco vizinhos, compara os valores de $k$ e imprime a matriz de confusão.
+
+\begin{lstlisting}
+python knn.py
+\end{lstlisting}
+
+{\sloppy Para demonstrar outra instância ou outro número de vizinhos, use os argumentos \mbox{\textbf{-{}-exemplo}} e \mbox{\textbf{-{}-k}}.\par}
+
+\end{document}

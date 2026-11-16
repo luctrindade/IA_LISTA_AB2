@@ -1,0 +1,137 @@
+\documentclass[12pt,a4paper]{article}
+
+\usepackage[utf8]{inputenc}
+\usepackage[T1]{fontenc}
+\usepackage[brazil]{babel}
+\usepackage[top=3cm,left=3cm,bottom=2cm,right=2cm]{geometry}
+\usepackage{mathptmx}
+\usepackage{inconsolata}
+\usepackage{setspace}
+\usepackage{indentfirst}
+\usepackage{titlesec}
+\usepackage{booktabs}
+\usepackage{array}
+\usepackage{listings}
+\usepackage{xcolor}
+\usepackage{float}
+
+\onehalfspacing
+\setlength{\parindent}{1.25cm}
+
+\titleformat*{\section}{\normalfont\bfseries\normalsize}
+\titleformat*{\subsection}{\normalfont\bfseries\normalsize}
+
+\lstset{
+    basicstyle=\ttfamily\footnotesize,
+    breaklines=true,
+    columns=fullflexible,
+    keepspaces=true,
+    frame=single,
+    rulecolor=\color{black!25},
+    backgroundcolor=\color{black!4},
+    xleftmargin=0.2cm,
+    xrightmargin=0.2cm,
+    framexleftmargin=4pt,
+    framexrightmargin=4pt,
+    framextopmargin=4pt,
+    framexbottommargin=4pt,
+    literate=
+        {á}{{\'a}}1 {é}{{\'e}}1 {í}{{\'i}}1 {ó}{{\'o}}1 {ú}{{\'u}}1
+        {Á}{{\'A}}1 {É}{{\'E}}1 {Í}{{\'I}}1 {Ó}{{\'O}}1 {Ú}{{\'U}}1
+        {ã}{{\~a}}1 {õ}{{\~o}}1 {Ã}{{\~A}}1 {Õ}{{\~O}}1
+        {â}{{\^a}}1 {ê}{{\^e}}1 {ô}{{\^o}}1
+        {à}{{\`a}}1 {ç}{{\c{c}}}1 {Ç}{{\c{C}}}1
+}
+
+\begin{document}
+
+\section{Questão 10: Planejamento de rotas para entregas urbanas}
+
+\subsection{Formulação do problema}
+
+Os estados são as nove localidades de A a I. O estado inicial é A. Em um estado $n$, cada trecho que liga $n$ a um vizinho $v$ define uma ação disponível. A transição leva o agente de $n$ a $v$. O grafo é não direcionado, então o mesmo trecho e custo se aplicam nos dois sentidos. O teste de objetivo verifica se o estado atual é I. O custo de uma rota é a soma dos tempos, em minutos, dos trechos percorridos.
+
+\subsection{Busca não informada}
+
+O enunciado associa ``Busca em Profundidade'' à sigla BFS. Aqui, DFS designa profundidade e BFS designa largura. A DFS visita o primeiro vizinho disponível em ordem alfabética e usa um conjunto de visitados. A BFS usa uma fila FIFO e insere vizinhos em ordem alfabética. A UCS retira o menor custo acumulado $g$ e desempata por localidade.
+
+Nas ordens abaixo, I aparece entre parênteses porque seu teste de objetivo encerra a busca antes de gerar sucessores. Contamos como expandidos somente os nós cujos sucessores são examinados.
+
+\begin{table}[H]
+    \centering
+    \begin{tabular}{>{\raggedright\arraybackslash}p{1.3cm} >{\raggedright\arraybackslash}p{5.5cm} >{\raggedright\arraybackslash}p{5.5cm} >{\raggedright\arraybackslash}p{1.7cm}}
+        \toprule
+        \textbf{Busca} & \textbf{Ordem até o objetivo} & \textbf{Rota encontrada} & \textbf{Custo} \\
+        \midrule
+        DFS & A - B - C - F - E - D - G - H - (I) & A - B - C - F - E - D - G - H - I & 29 min \\
+        \addlinespace
+        BFS & A - B - D - C - E - G - F - H - (I) & A - B - C - F - I & 15 min \\
+        \addlinespace
+        UCS & A - D - B - E - C - F - G - H - (I) & A - B - E - F - I & 13 min \\
+        \bottomrule
+    \end{tabular}
+\end{table}
+
+A DFS segue o ramo A-B-C-F e, em F, visita E antes de I. O desvio por E-D-G-H leva a uma rota de 29 minutos. A BFS encontra uma rota de quatro trechos e 15 minutos. A UCS chega a I com custo 13. A rota A-B-E-H-I também custa 13 minutos, mas a implementação preserva a primeira rota registrada quando encontra outra de mesmo custo.
+
+\subsection{Busca A*}
+
+A* prioriza $f(n) = g(n) + h(n)$. Aqui, $g$ é o tempo acumulado desde A, e $h$ é a estimativa fornecida pelo enunciado. Em empate de $f$, escolhemos a menor letra. Quando o algoritmo encontra um caminho mais barato para um estado, atualiza sua posição na fronteira.
+
+\begin{table}[H]
+    \centering
+    \begin{tabular}{>{\raggedright\arraybackslash}p{1.8cm} >{\raggedright\arraybackslash}p{1.8cm} >{\raggedright\arraybackslash}p{1.8cm} >{\raggedright\arraybackslash}p{1.8cm} >{\raggedright\arraybackslash}p{1.8cm}}
+        \toprule
+        \textbf{Ordem} & \textbf{Nó} & \textbf{g} & \textbf{h} & \textbf{f} \\
+        \midrule
+        1 & A & 0 & 10 & 10 \\
+        \addlinespace
+        2 & B & 4 & 8 & 12 \\
+        \addlinespace
+        3 & D & 3 & 9 & 12 \\
+        \addlinespace
+        4 & E & 6 & 6 & 12 \\
+        \addlinespace
+        5 & F & 9 & 4 & 13 \\
+        \addlinespace
+        6 & H & 11 & 2 & 13 \\
+        \addlinespace
+        7 & (I) & 13 & 0 & 13 \\
+        \bottomrule
+    \end{tabular}
+\end{table}
+
+Após expandir E, F e H entram na fronteira com $f = 13$. F é retirado primeiro e gera I com $g = 13$. H é retirado antes de I pelo desempate alfabético e também chega a I com custo 13. C e G ficam na fronteira com $f = 15$ e $f = 14$, respectivamente. O objetivo é retirado com a rota A-B-E-F-I.
+
+A heurística é consistente. Para todo trecho de custo $c$, verificamos $|h(u) - h(v)| \leq c$, e $h(I) = 0$. Portanto, $h$ é admissível: ao somar as desigualdades ao longo de um caminho até I, sua estimativa não ultrapassa o custo desse caminho. A* e UCS encontram o mesmo custo ótimo.
+
+\subsection{Comparação dos algoritmos}
+
+\begin{table}[H]
+    \centering
+    \begin{tabular}{>{\raggedright\arraybackslash}p{1.6cm} >{\raggedright\arraybackslash}p{1.8cm} >{\raggedright\arraybackslash}p{2.3cm} >{\raggedright\arraybackslash}p{4.0cm} >{\raggedright\arraybackslash}p{3.8cm}}
+        \toprule
+        \textbf{Busca} & \textbf{Custo} & \textbf{Expandidos} & \textbf{Completa neste grafo?} & \textbf{Ótima em minutos?} \\
+        \midrule
+        DFS & 29 min & 8 & Sim & Não \\
+        \addlinespace
+        BFS & 15 min & 8 & Sim & Não \\
+        \addlinespace
+        UCS & 13 min & 8 & Sim & Sim \\
+        \addlinespace
+        A* & 13 min & 6 & Sim & Sim \\
+        \bottomrule
+    \end{tabular}
+\end{table}
+
+O grafo é finito e as implementações controlam estados repetidos. A BFS minimiza o número de trechos. Como os tempos são diferentes, esse critério pode produzir uma rota mais demorada. A UCS usa diretamente o custo acumulado. A* mantém a otimalidade com a heurística consistente e, neste exemplo, expande dois nós a menos.
+
+\subsection{Visitas obrigatórias a D e F}
+
+O estado passa a ser (localidade, $S$), em que $S$ é o conjunto de pontos obrigatórios já visitados. O estado inicial é (A, vazio). A ação segue para um vizinho e acrescenta D ou F a $S$ quando chega a um deles. O agente só pode entrar em I depois de visitar ambos. O objetivo é (I, \{D, F\}) e o custo dos trechos permanece igual.
+
+A UCS no espaço ampliado encontra \textbf{A-D-E-F-I, com 14 minutos} $(3 + 4 + 3 + 4)$. Para conferir o mínimo, na ordem D antes de F os menores custos dos segmentos A-D, D-F e F-I somam $3 + 7 + 4 = 14$. Na ordem inversa, A-F custa pelo menos 9, F-D pelo menos 7 e D-I pelo menos 11, somando 27. O primeiro limite é atingido pela rota encontrada.
+
+Para reproduzir os resultados, execute \texttt{python buscas.py} na pasta da questão.
+
+\end{document}

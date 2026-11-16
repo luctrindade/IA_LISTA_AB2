@@ -1,0 +1,126 @@
+\documentclass[12pt,a4paper]{article}
+
+\usepackage[utf8]{inputenc}
+\usepackage[T1]{fontenc}
+\usepackage[brazil]{babel}
+\usepackage[top=3cm,left=3cm,bottom=2cm,right=2cm]{geometry}
+\usepackage{mathptmx}
+\usepackage{inconsolata}
+\usepackage{setspace}
+\usepackage{indentfirst}
+\usepackage{titlesec}
+\usepackage{booktabs}
+\usepackage{array}
+\usepackage{listings}
+\usepackage{xcolor}
+\usepackage{xurl}
+\urlstyle{same}
+\usepackage{float}
+
+\onehalfspacing
+\setlength{\parindent}{1.25cm}
+
+\titleformat*{\section}{\normalfont\bfseries\normalsize}
+\titleformat*{\subsection}{\normalfont\bfseries\normalsize}
+
+\lstset{
+    basicstyle=\ttfamily\footnotesize,
+    breaklines=true,
+    columns=fullflexible,
+    keepspaces=true,
+    frame=single,
+    rulecolor=\color{black!25},
+    backgroundcolor=\color{black!4},
+    xleftmargin=0.2cm,
+    xrightmargin=0.2cm,
+    framexleftmargin=4pt,
+    framexrightmargin=4pt,
+    framextopmargin=4pt,
+    framexbottommargin=4pt,
+    literate=
+        {á}{{\'a}}1 {é}{{\'e}}1 {í}{{\'i}}1 {ó}{{\'o}}1 {ú}{{\'u}}1
+        {Á}{{\'A}}1 {É}{{\'E}}1 {Í}{{\'I}}1 {Ó}{{\'O}}1 {Ú}{{\'U}}1
+        {ã}{{\~a}}1 {õ}{{\~o}}1 {Ã}{{\~A}}1 {Õ}{{\~O}}1
+        {â}{{\^a}}1 {ê}{{\^e}}1 {ô}{{\^o}}1
+        {à}{{\`a}}1 {ç}{{\c{c}}}1 {Ç}{{\c{C}}}1
+}
+
+\begin{document}
+
+\section{Questão 15 --- Representação e raciocínio com OWL 2}
+
+\subsection{Aplicação e ontologia}
+
+Um catálogo pode agrupar livros em categorias úteis para encontrar leituras. O exemplo reutiliza a ontologia fictícia da questão 9 e mostra como o HermiT, integrado ao Owlready2, classifica livros, infere relações temáticas e verifica a coerência dos dados [1, 2].
+
+Em OWL 2, classes descrevem categorias e indivíduos representam entidades concretas. Propriedades de objeto ligam indivíduos. Propriedades de dados associam indivíduos a literais. No catálogo, Romance é uma subclasse de Livro, Órbita é um romance e o título de Órbita é um literal. O gênero FiccaoCientifica, o nível Iniciante e o tema Tecnologia são indivíduos do vocabulário do catálogo.
+
+\begin{table}[H]
+    \centering
+    \begin{tabular}{>{\raggedright\arraybackslash}p{7.4cm} >{\raggedright\arraybackslash}p{7.4cm}}
+        \toprule
+        \textbf{Fato ou axioma} & \textbf{Função} \\
+        \midrule
+        Orbita : Romance & Classifica Órbita em uma categoria explicitamente registrada. \\
+        \addlinespace
+        Orbita temGeneroPrincipal FiccaoCientifica & Liga o livro ao seu gênero principal. \\
+        \addlinespace
+        Orbita temNivel Iniciante & Registra o nível indicado no catálogo. \\
+        \addlinespace
+        FiccaoCientifica generoAbordaTema Tecnologia & Associa um tema ao gênero. \\
+        \addlinespace
+        Romance subClassOf Livro & Estabelece que todo romance é um livro. \\
+        \addlinespace
+        temGeneroPrincipal subPropertyOf temGenero & Todo gênero principal também é um gênero do livro. \\
+        \addlinespace
+        Livro disjointWith Autor & Proíbe que um indivíduo pertença às duas classes. \\
+        \bottomrule
+    \end{tabular}
+\end{table}
+
+\subsection{Axiomas que permitem inferência}
+
+Em sintaxe Manchester, a expressão \textbf{Livro and (temGenero value FiccaoCientifica)} é equivalente à classe \textbf{LivroFiccaoCientifica}. A expressão \textbf{Livro and (temNivel value Iniciante)} é equivalente à classe \textbf{LeituraIntrodutoria}. Assim, satisfazer a descrição é suficiente para pertencer à classe definida.
+
+A cadeia de propriedades estabelece que, se um livro tem um gênero principal e esse gênero aborda um tema, então o livro tem esse tema. O axioma evita cadastrar a mesma associação temática em cada livro do gênero.
+
+\subsection{Resultados observados com HermiT}
+
+\begin{table}[H]
+    \centering
+    \begin{tabular}{>{\raggedright\arraybackslash}p{3.6cm} >{\raggedright\arraybackslash}p{4.6cm} >{\raggedright\arraybackslash}p{6.2cm}}
+        \toprule
+        \textbf{Verificação} & \textbf{Resultado} & \textbf{Justificativa} \\
+        \midrule
+        Classificação de Órbita & LivroFiccaoCientifica e LeituraIntrodutoria & O gênero principal implica temGenero. O gênero e o nível satisfazem as duas definições de classe. \\
+        \addlinespace
+        Relação temática & Orbita temTema Tecnologia & A cadeia de propriedades percorre Órbita, FiccaoCientifica e Tecnologia. \\
+        \addlinespace
+        Consulta do catálogo & Zero resultados antes da inferência. Depois, Órbita (164 páginas). & A consulta exige o tema inferido. O livro também satisfaz o gênero, o idioma, o nível e o limite de páginas. \\
+        \addlinespace
+        Teste de consistência & A base original é consistente. Ao declarar Órbita como Autor, o HermiT detecta a inconsistência. & Órbita já pertence a Livro, classe disjunta de Autor. O teste só altera a sessão em memória. \\
+        \bottomrule
+    \end{tabular}
+\end{table}
+
+\subsection{Reprodução do experimento}
+
+Instale o Owlready2 e mantenha o Java disponível no PATH. Execute os comandos abaixo na pasta da questão. Se precisar indicar o executável Java, acrescente \texttt{-{}-java} seguido do caminho. A ontologia também pode ser inspecionada no Protégé.
+
+\begin{lstlisting}
+python -m pip install -r requirements.txt
+python recomendar.py --nivel Iniciante --max-paginas 200
+python recomendar.py --testar-inconsistencia
+\end{lstlisting}
+
+\subsection{Discussão}
+
+Uma classe definida permite aplicar o mesmo critério a novos livros, e a cadeia de propriedades torna a associação temática rastreável aos fatos de origem. As conclusões dependem dos axiomas e dos dados cadastrados. OWL usa a hipótese de mundo aberto. Se o gênero de um livro estiver ausente, por exemplo, isso não basta para concluir que ele está fora da ficção científica. Nesse caso, uma busca pode deixar de retorná-lo por falta de evidência.
+
+\section*{Referências}
+
+\noindent [1] W3C. \textbf{OWL 2 Web Ontology Language Primer}. Disponível em: \url{https://www.w3.org/TR/owl2-primer/}.
+
+\noindent [2] OWLREADY2. \textbf{Reasoning}. Disponível em: \url{https://owlready2.readthedocs.io/en/latest/reasoning.html}.
+
+\end{document}
