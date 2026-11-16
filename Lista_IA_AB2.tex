@@ -20,6 +20,9 @@
 \usepackage{tikz}
 \usetikzlibrary{arrows.meta}
 \usepackage{standalone}
+\usepackage[titles]{tocloft}
+\renewcommand{\cftsecleader}{\cftdotfill{\cftdotsep}}
+\usepackage[hidelinks]{hyperref}
 
 \onehalfspacing
 \setlength{\parindent}{1.25cm}
@@ -58,15 +61,15 @@
     \textbf{INSTITUTO DE COMPUTAÇÃO}\\
     \textbf{CIÊNCIA DA COMPUTAÇÃO}
 
+    \vspace*{\stretch{2}}
+
+    {\textbf{LISTA INTELIGÊNCIA ARTIFICIAL AB2}}
+
     \vfill
 
-    {\large \textbf{LISTA INTELIGÊNCIA ARTIFICIAL AB2}}
-
-    \vspace{1.5cm}
-
-    Felipe Lima Aragão\\
-    Lucas Trindade de Souza\\
-    Marcos Vinicius da Silva
+    \textbf{FELIPE LIMA ARAGÃO}\\
+    \textbf{LUCAS TRINDADE DE SOUZA}\\
+    \textbf{MARCOS VINICIUS DA SILVA}
 
     \vfill
 
@@ -74,8 +77,11 @@
     2026
 \end{titlepage}
 
+{
+\titleformat*{\section}{\normalfont\bfseries\normalsize\centering}
 \setcounter{tocdepth}{1}
 \tableofcontents
+}
 \clearpage
 
 \input{Questão_01/Questão_01.tex}
