@@ -9,6 +9,7 @@ from urllib.request import Request, urlopen
 
 PESOS = {"alta": 10, "media": 5, "baixa": 1}
 HORARIO = {"type": "string", "pattern": "^[0-2][0-9]:[0-5][0-9]$"}
+HORARIO_OPCIONAL = {"anyOf": [HORARIO, {"type": "null"}]}
 
 
 def objeto(campos):
@@ -18,8 +19,8 @@ def objeto(campos):
 
 ESQUEMA = objeto({
     "pergunta": {"type": "string"},
-    "inicio": {"anyOf": [HORARIO, {"type": "null"}]},
-    "fim": {"anyOf": [HORARIO, {"type": "null"}]},
+    "inicio": HORARIO_OPCIONAL,
+    "fim": HORARIO_OPCIONAL,
     "tarefas": {
         "type": "array", "maxItems": 8,
         "items": objeto({
@@ -27,7 +28,8 @@ ESQUEMA = objeto({
             "duracao": {"type": "integer", "minimum": 1, "maximum": 1440},
             "prioridade": {"enum": list(PESOS)},
             "prazo": {"enum": ["hoje", "amanha", "depois", "sem prazo"]},
-            "fixo": {"anyOf": [HORARIO, {"type": "null"}]},
+            "fixo": HORARIO_OPCIONAL,
+            "concluir_ate": HORARIO_OPCIONAL,
         }),
     },
 })
@@ -35,24 +37,31 @@ ESQUEMA = objeto({
 INSTRUCAO = """Extraia dados de um pedido de agenda de um único dia.
 Retorne apenas JSON. Use minutos inteiros para duração e HH:MM para horários.
 Tarefas são indivisíveis e compromissos com início fixo são obrigatórios.
-Você é um extrator de dados, não um planejador. Nunca atribua horários.
-Em "fixo", use null em toda tarefa sem hora de início explicitamente ligada a ela.
-A janela do dia, a duração e o prazo não são horários fixos de tarefa.
+Inclua todas as atividades solicitadas, inclusive as que pareçam inviáveis.
+Preencha "fixo" somente com um início obrigatório, como "a reunião começa às 10h".
+O início obrigatório deve ter sido informado para aquela mesma tarefa. Para
+tarefas flexíveis ou com apenas prazo de entrega, use "fixo": null.
 No campo prazo, use "hoje" para hoje, "amanha" para amanhã, "depois" para
 datas posteriores a amanhã e "sem prazo" apenas quando o prazo estiver ausente.
 Use prioridade media quando omitida e 'sem prazo' quando não houver prazo.
 Mapeie urgente para alta. Use 'depois' para prazo após amanhã.
-Se faltar a janela, horário ou duração de uma tarefa, houver ambiguidade
-ou o pedido exigir agenda de vários dias, dependências ou divisão de tarefas,
-faça uma pergunta em português no campo pergunta. Não invente esses dados.
-Se o pedido estiver completo, pergunta deve ser uma string vazia.
+Em "concluir_ate", use o horário limite somente se a tarefa precisar terminar
+até uma hora explícita no dia planejado, por exemplo "entregar hoje até 15h".
+Nesse caso, use também prazo "hoje". Use null nos demais casos. Para um compromisso
+das 10h às 11h, extraia início fixo 10:00 e duração 60 minutos.
+Use pergunta vazia quando puder extrair os dados. Durações em minutos e
+intervalos com início e fim são suficientes. Peça esclarecimento em português
+se faltar a janela, duração ou início obrigatório, ou se o pedido envolver
+mais de um dia, dependências ou tarefas divisíveis.
 
 Exemplo de extração:
 Pedido: Tenho das 9h às 12h. Quero ler por 30 minutos até amanhã.
-Tenho uma reunião das 10h às 11h, com prioridade alta.
+Preciso enviar um formulário hoje até 10h. O formulário leva 20 minutos e é
+urgente. Tenho também uma reunião das 9h às 10h, com prioridade alta.
 JSON: {"pergunta":"","inicio":"09:00","fim":"12:00","tarefas":[
-{"nome":"Ler","duracao":30,"prioridade":"media","prazo":"amanha","fixo":null},
-{"nome":"Reunião","duracao":60,"prioridade":"alta","prazo":"sem prazo","fixo":"10:00"}]}"""
+{"nome":"Ler","duracao":30,"prioridade":"media","prazo":"amanha","fixo":null,"concluir_ate":null},
+{"nome":"Enviar formulário","duracao":20,"prioridade":"alta","prazo":"hoje","fixo":null,"concluir_ate":"10:00"},
+{"nome":"Reunião","duracao":60,"prioridade":"alta","prazo":"sem prazo","fixo":"09:00","concluir_ate":null}]}"""
 
 DEMO = {
     "pergunta": "", "inicio": "14:00", "fim": "18:00",
@@ -100,6 +109,11 @@ def hora(valor):
     return f"{valor // 60:02d}:{valor % 60:02d}"
 
 
+def hora_limite(tarefa):
+    limite = tarefa.get("concluir_ate")
+    return minutos(limite) if limite is not None else 1440
+
+
 def validar(dados):
     inicio, fim = minutos(dados["inicio"]), minutos(dados["fim"])
     tarefas = dados["tarefas"]
@@ -115,10 +129,15 @@ def validar(dados):
         nomes.add(nome.casefold())
         if tarefa["prioridade"] not in PESOS or tarefa["prazo"] not in ("hoje", "amanha", "depois", "sem prazo"):
             raise ValueError("Prioridade ou prazo inválido na interpretação.")
+        limite = hora_limite(tarefa)
+        if tarefa.get("concluir_ate") is not None and tarefa["prazo"] != "hoje":
+            raise ValueError(f"O horário limite de {nome} precisa pertencer ao dia planejado.")
         if tarefa["fixo"] is None:
             livres.append(indice)
         else:
             comeco = minutos(tarefa["fixo"])
+            if comeco + duracao > limite and tarefa.get("concluir_ate") is not None:
+                raise ValueError(f"O compromisso fixo {nome} termina depois do seu horário limite.")
             ocupados.append((comeco, comeco + duracao, indice))
     blocos = []
     cursor = inicio
@@ -134,6 +153,8 @@ def validar(dados):
 
 
 def planejar(tarefas, blocos, ocupados, livres):
+    limites = [hora_limite(tarefa) for tarefa in tarefas]
+
     @lru_cache(maxsize=None)
     def melhor(bloco, cursor, restantes):
         if bloco == len(blocos) or not restantes:
@@ -143,7 +164,7 @@ def planejar(tarefas, blocos, ocupados, livres):
         for indice in restantes:
             tarefa = tarefas[indice]
             fim = cursor + tarefa["duracao"]
-            if fim <= blocos[bloco][1]:
+            if fim <= min(blocos[bloco][1], limites[indice]):
                 (pontos, urgentes), itens = melhor(
                     bloco, fim, tuple(i for i in restantes if i != indice))
                 nota = (pontos + PESOS[tarefa["prioridade"]],
@@ -169,11 +190,16 @@ def explicar(tarefas, plano, blocos):
     for indice, tarefa in enumerate(tarefas):
         if indice in selecionadas:
             continue
-        motivo = ("duração maior que qualquer bloco contínuo livre"
-                  if tarefa["duracao"] > maior_bloco
-                  else "o plano selecionado tem maior ou igual utilidade com as demais tarefas")
+        limite = hora_limite(tarefa)
+        if tarefa["duracao"] > maior_bloco:
+            motivo = "duração maior que qualquer bloco contínuo livre"
+        elif all(inicio + tarefa["duracao"] > min(fim, limite) for inicio, fim in blocos):
+            motivo = f"nenhum bloco comporta a tarefa até {hora(limite)}"
+        else:
+            motivo = "o plano selecionado tem maior ou igual utilidade com as demais tarefas"
         aviso = " | prazo de hoje em risco" if tarefa["prazo"] == "hoje" else ""
-        print(f"  Pendente: {tarefa['nome']} ({tarefa['duracao']} min, prazo {tarefa['prazo']}) | {motivo}{aviso}.")
+        prazo = f"hoje até {hora(limite)}" if tarefa.get("concluir_ate") is not None else tarefa["prazo"]
+        print(f"  Pendente: {tarefa['nome']} ({tarefa['duracao']} min, prazo {prazo}) | {motivo}{aviso}.")
 
 
 def main():
@@ -186,27 +212,34 @@ def main():
         if args.demo:
             print("Demonstração com entrada estruturada de exemplo.")
             dados = DEMO
+            blocos, ocupados, livres = validar(dados)
         else:
             pedido = args.pedido or input("Descreva a agenda que você quer montar: ")
             while True:
                 dados = interpretar(args.modelo, pedido)
                 pergunta = dados["pergunta"].strip()
-                if not pergunta:
-                    break
-                complemento = input(f"{pergunta}\nResposta (Enter para sair): ").strip()
+                if pergunta:
+                    complemento = input(f"{pergunta}\nResposta (Enter para sair): ").strip()
+                else:
+                    print("Interpretação para revisão:")
+                    print(f"Janela {dados['inicio']}–{dados['fim']}.")
+                    for tarefa in dados["tarefas"]:
+                        limite = tarefa.get("concluir_ate")
+                        prazo = f"hoje até {limite}" if limite is not None else tarefa["prazo"]
+                        print(f"  {tarefa['nome']} | {tarefa['duracao']} min | {tarefa['prioridade']} | "
+                              f"prazo {prazo} | início fixo {tarefa['fixo'] or 'livre'}")
+                    try:
+                        blocos, ocupados, livres = validar(dados)
+                    except ValueError as erro:
+                        print(f"Confira a interpretação. {erro}")
+                    else:
+                        if input("Calcular com esses dados? [s/N]: ").strip().lower() == "s":
+                            break
+                    complemento = input("Informe a correção (Enter para sair): ").strip()
                 if not complemento:
                     return
                 pedido += "\nComplemento: " + complemento
 
-        blocos, ocupados, livres = validar(dados)
-        if not args.demo:
-            print("Interpretação para revisão:")
-            print(f"Janela {dados['inicio']}–{dados['fim']}.")
-            for tarefa in dados["tarefas"]:
-                print(f"  {tarefa['nome']} | {tarefa['duracao']} min | {tarefa['prioridade']} | "
-                      f"prazo {tarefa['prazo']} | início fixo {tarefa['fixo'] or 'livre'}")
-            if input("Calcular com esses dados? [s/N]: ").strip().lower() != "s":
-                return
         plano = planejar(dados["tarefas"], blocos, ocupados, livres)
         explicar(dados["tarefas"], plano, blocos)
     except (OSError, ValueError, KeyError, TypeError, AttributeError) as erro:

@@ -1,0 +1,406 @@
+<?xml version="1.0"?>
+<rdf:RDF xmlns:rdf="http://www.w3.org/1999/02/22-rdf-syntax-ns#"
+         xmlns:xsd="http://www.w3.org/2001/XMLSchema#"
+         xmlns:rdfs="http://www.w3.org/2000/01/rdf-schema#"
+         xmlns:owl="http://www.w3.org/2002/07/owl#"
+         xml:base="https://example.org/biblioteca"
+         xmlns="https://example.org/biblioteca#">
+
+<owl:Ontology rdf:about="https://example.org/biblioteca"/>
+
+<owl:ObjectProperty rdf:about="#temGenero">
+  <rdfs:domain rdf:resource="#Livro"/>
+  <rdfs:range rdf:resource="#Genero"/>
+</owl:ObjectProperty>
+
+<owl:ObjectProperty rdf:about="#temGeneroPrincipal">
+  <rdfs:subPropertyOf rdf:resource="#temGenero"/>
+  <rdf:type rdf:resource="http://www.w3.org/2002/07/owl#FunctionalProperty"/>
+</owl:ObjectProperty>
+
+<owl:ObjectProperty rdf:about="#temAutor">
+  <rdfs:domain rdf:resource="#Livro"/>
+  <rdfs:range rdf:resource="#Autor"/>
+  <owl:inverseOf rdf:resource="#escreveu"/>
+</owl:ObjectProperty>
+
+<owl:ObjectProperty rdf:about="#escreveu">
+  <rdfs:domain rdf:resource="#Autor"/>
+  <rdfs:range rdf:resource="#Livro"/>
+  <owl:inverseOf rdf:resource="#temAutor"/>
+</owl:ObjectProperty>
+
+<owl:ObjectProperty rdf:about="#temTema">
+  <rdfs:domain rdf:resource="#Livro"/>
+  <rdfs:range rdf:resource="#Tema"/>
+  <owl:propertyChainAxiom>
+    <rdf:Description>
+      <rdf:first rdf:resource="#temGeneroPrincipal"/>
+      <rdf:rest>
+        <rdf:Description>
+          <rdf:first rdf:resource="#generoAbordaTema"/>
+          <rdf:rest rdf:resource="http://www.w3.org/1999/02/22-rdf-syntax-ns#nil"/>
+        </rdf:Description>
+      </rdf:rest>
+    </rdf:Description>
+  </owl:propertyChainAxiom>
+</owl:ObjectProperty>
+
+<owl:ObjectProperty rdf:about="#generoAbordaTema">
+  <rdfs:domain rdf:resource="#Genero"/>
+  <rdfs:range rdf:resource="#Tema"/>
+</owl:ObjectProperty>
+
+<owl:ObjectProperty rdf:about="#temIdioma">
+  <rdf:type rdf:resource="http://www.w3.org/2002/07/owl#FunctionalProperty"/>
+  <rdfs:domain rdf:resource="#Livro"/>
+  <rdfs:range rdf:resource="#Idioma"/>
+</owl:ObjectProperty>
+
+<owl:ObjectProperty rdf:about="#temNivel">
+  <rdf:type rdf:resource="http://www.w3.org/2002/07/owl#FunctionalProperty"/>
+  <rdfs:domain rdf:resource="#Livro"/>
+  <rdfs:range rdf:resource="#Nivel"/>
+</owl:ObjectProperty>
+
+<owl:ObjectProperty rdf:about="#publicadoPor">
+  <rdfs:domain rdf:resource="#Livro"/>
+  <rdfs:range rdf:resource="#Editora"/>
+</owl:ObjectProperty>
+
+<owl:ObjectProperty rdf:about="#prefereGenero">
+  <rdfs:domain rdf:resource="#Leitor"/>
+  <rdfs:range rdf:resource="#Genero"/>
+</owl:ObjectProperty>
+
+<owl:ObjectProperty rdf:about="#prefereIdioma">
+  <rdfs:domain rdf:resource="#Leitor"/>
+  <rdfs:range rdf:resource="#Idioma"/>
+</owl:ObjectProperty>
+
+<owl:DatatypeProperty rdf:about="#titulo">
+  <rdf:type rdf:resource="http://www.w3.org/2002/07/owl#FunctionalProperty"/>
+  <rdfs:domain rdf:resource="#Livro"/>
+  <rdfs:range rdf:resource="http://www.w3.org/2001/XMLSchema#string"/>
+</owl:DatatypeProperty>
+
+<owl:DatatypeProperty rdf:about="#codigoCatalogo">
+  <rdf:type rdf:resource="http://www.w3.org/2002/07/owl#FunctionalProperty"/>
+  <rdfs:domain rdf:resource="#Livro"/>
+  <rdfs:range rdf:resource="http://www.w3.org/2001/XMLSchema#string"/>
+</owl:DatatypeProperty>
+
+<owl:DatatypeProperty rdf:about="#sinopse">
+  <rdf:type rdf:resource="http://www.w3.org/2002/07/owl#FunctionalProperty"/>
+  <rdfs:domain rdf:resource="#Livro"/>
+  <rdfs:range rdf:resource="http://www.w3.org/2001/XMLSchema#string"/>
+</owl:DatatypeProperty>
+
+<owl:DatatypeProperty rdf:about="#paginas">
+  <rdf:type rdf:resource="http://www.w3.org/2002/07/owl#FunctionalProperty"/>
+  <rdfs:domain rdf:resource="#Livro"/>
+  <rdfs:range rdf:resource="http://www.w3.org/2001/XMLSchema#integer"/>
+</owl:DatatypeProperty>
+
+<owl:DatatypeProperty rdf:about="#anoPublicacao">
+  <rdf:type rdf:resource="http://www.w3.org/2002/07/owl#FunctionalProperty"/>
+  <rdfs:domain rdf:resource="#Livro"/>
+  <rdfs:range rdf:resource="http://www.w3.org/2001/XMLSchema#integer"/>
+</owl:DatatypeProperty>
+
+<owl:DatatypeProperty rdf:about="#nomeAutor">
+  <rdf:type rdf:resource="http://www.w3.org/2002/07/owl#FunctionalProperty"/>
+  <rdfs:domain rdf:resource="#Autor"/>
+  <rdfs:range rdf:resource="http://www.w3.org/2001/XMLSchema#string"/>
+</owl:DatatypeProperty>
+
+<owl:Class rdf:about="#Livro">
+  <rdfs:subClassOf rdf:resource="http://www.w3.org/2002/07/owl#Thing"/>
+  <rdfs:subClassOf>
+    <owl:Restriction>
+      <owl:onProperty rdf:resource="#temIdioma"/>
+      <owl:someValuesFrom rdf:resource="#Idioma"/>
+    </owl:Restriction>
+  </rdfs:subClassOf>
+  <rdfs:subClassOf>
+    <owl:Restriction>
+      <owl:onProperty rdf:resource="#temGeneroPrincipal"/>
+      <owl:someValuesFrom rdf:resource="#Genero"/>
+    </owl:Restriction>
+  </rdfs:subClassOf>
+  <rdfs:subClassOf>
+    <owl:Restriction>
+      <owl:onProperty rdf:resource="#temNivel"/>
+      <owl:someValuesFrom rdf:resource="#Nivel"/>
+    </owl:Restriction>
+  </rdfs:subClassOf>
+</owl:Class>
+
+<owl:Class rdf:about="#Romance">
+  <rdfs:subClassOf rdf:resource="#Livro"/>
+  <owl:disjointWith rdf:resource="#Coletanea"/>
+</owl:Class>
+
+<owl:Class rdf:about="#Coletanea">
+  <rdfs:subClassOf rdf:resource="#Livro"/>
+</owl:Class>
+
+<owl:Class rdf:about="#LivroFiccaoCientifica">
+  <rdfs:subClassOf rdf:resource="#Livro"/>
+  <owl:equivalentClass>
+    <owl:Class>
+      <owl:intersectionOf rdf:parseType="Collection">
+        <rdf:Description rdf:about="#Livro"/>
+        <owl:Restriction>
+          <owl:onProperty rdf:resource="#temGenero"/>
+          <owl:hasValue rdf:resource="#FiccaoCientifica"/>
+        </owl:Restriction>
+      </owl:intersectionOf>
+    </owl:Class>
+  </owl:equivalentClass>
+</owl:Class>
+
+<owl:Class rdf:about="#LeituraIntrodutoria">
+  <rdfs:subClassOf rdf:resource="#Livro"/>
+  <owl:equivalentClass>
+    <owl:Class>
+      <owl:intersectionOf rdf:parseType="Collection">
+        <rdf:Description rdf:about="#Livro"/>
+        <owl:Restriction>
+          <owl:onProperty rdf:resource="#temNivel"/>
+          <owl:hasValue rdf:resource="#Iniciante"/>
+        </owl:Restriction>
+      </owl:intersectionOf>
+    </owl:Class>
+  </owl:equivalentClass>
+</owl:Class>
+
+<owl:Class rdf:about="#Leitor">
+  <rdfs:subClassOf rdf:resource="http://www.w3.org/2002/07/owl#Thing"/>
+</owl:Class>
+
+<owl:Class rdf:about="#Autor">
+  <rdfs:subClassOf rdf:resource="http://www.w3.org/2002/07/owl#Thing"/>
+</owl:Class>
+
+<owl:Class rdf:about="#Genero">
+  <rdfs:subClassOf rdf:resource="http://www.w3.org/2002/07/owl#Thing"/>
+</owl:Class>
+
+<owl:Class rdf:about="#Tema">
+  <rdfs:subClassOf rdf:resource="http://www.w3.org/2002/07/owl#Thing"/>
+</owl:Class>
+
+<owl:Class rdf:about="#Idioma">
+  <rdfs:subClassOf rdf:resource="http://www.w3.org/2002/07/owl#Thing"/>
+</owl:Class>
+
+<owl:Class rdf:about="#Nivel">
+  <rdfs:subClassOf rdf:resource="http://www.w3.org/2002/07/owl#Thing"/>
+</owl:Class>
+
+<owl:Class rdf:about="#Editora">
+  <rdfs:subClassOf rdf:resource="http://www.w3.org/2002/07/owl#Thing"/>
+</owl:Class>
+
+<owl:NamedIndividual rdf:about="#FiccaoCientifica">
+  <rdf:type rdf:resource="#Genero"/>
+  <generoAbordaTema rdf:resource="#Tecnologia"/>
+  <rdfs:label rdf:datatype="http://www.w3.org/2001/XMLSchema#string">Ficção científica</rdfs:label>
+</owl:NamedIndividual>
+
+<owl:NamedIndividual rdf:about="#Fantasia">
+  <rdf:type rdf:resource="#Genero"/>
+  <generoAbordaTema rdf:resource="#Magia"/>
+  <rdfs:label rdf:datatype="http://www.w3.org/2001/XMLSchema#string">Fantasia</rdfs:label>
+</owl:NamedIndividual>
+
+<owl:NamedIndividual rdf:about="#Misterio">
+  <rdf:type rdf:resource="#Genero"/>
+  <generoAbordaTema rdf:resource="#Investigacao"/>
+  <rdfs:label rdf:datatype="http://www.w3.org/2001/XMLSchema#string">Mistério</rdfs:label>
+</owl:NamedIndividual>
+
+<owl:NamedIndividual rdf:about="#Portugues">
+  <rdf:type rdf:resource="#Idioma"/>
+  <rdfs:label rdf:datatype="http://www.w3.org/2001/XMLSchema#string">Português</rdfs:label>
+</owl:NamedIndividual>
+
+<owl:NamedIndividual rdf:about="#Ingles">
+  <rdf:type rdf:resource="#Idioma"/>
+  <rdfs:label rdf:datatype="http://www.w3.org/2001/XMLSchema#string">Inglês</rdfs:label>
+</owl:NamedIndividual>
+
+<owl:NamedIndividual rdf:about="#Iniciante">
+  <rdf:type rdf:resource="#Nivel"/>
+  <rdfs:label rdf:datatype="http://www.w3.org/2001/XMLSchema#string">Iniciante</rdfs:label>
+</owl:NamedIndividual>
+
+<owl:NamedIndividual rdf:about="#Intermediario">
+  <rdf:type rdf:resource="#Nivel"/>
+  <rdfs:label rdf:datatype="http://www.w3.org/2001/XMLSchema#string">Intermediário</rdfs:label>
+</owl:NamedIndividual>
+
+<owl:NamedIndividual rdf:about="#Tecnologia">
+  <rdf:type rdf:resource="#Tema"/>
+  <rdfs:label rdf:datatype="http://www.w3.org/2001/XMLSchema#string">Tecnologia</rdfs:label>
+</owl:NamedIndividual>
+
+<owl:NamedIndividual rdf:about="#Magia">
+  <rdf:type rdf:resource="#Tema"/>
+  <rdfs:label rdf:datatype="http://www.w3.org/2001/XMLSchema#string">Magia</rdfs:label>
+</owl:NamedIndividual>
+
+<owl:NamedIndividual rdf:about="#Investigacao">
+  <rdf:type rdf:resource="#Tema"/>
+  <rdfs:label rdf:datatype="http://www.w3.org/2001/XMLSchema#string">Investigação</rdfs:label>
+</owl:NamedIndividual>
+
+<owl:NamedIndividual rdf:about="#Horizonte">
+  <rdf:type rdf:resource="#Editora"/>
+  <rdfs:label rdf:datatype="http://www.w3.org/2001/XMLSchema#string">Horizonte</rdfs:label>
+</owl:NamedIndividual>
+
+<owl:NamedIndividual rdf:about="#LiaCosta">
+  <rdf:type rdf:resource="#Autor"/>
+  <nomeAutor rdf:datatype="http://www.w3.org/2001/XMLSchema#string">Lia Costa</nomeAutor>
+</owl:NamedIndividual>
+
+<owl:NamedIndividual rdf:about="#RuiAlves">
+  <rdf:type rdf:resource="#Autor"/>
+  <nomeAutor rdf:datatype="http://www.w3.org/2001/XMLSchema#string">Rui Alves</nomeAutor>
+</owl:NamedIndividual>
+
+<owl:NamedIndividual rdf:about="#IaraDias">
+  <rdf:type rdf:resource="#Autor"/>
+  <nomeAutor rdf:datatype="http://www.w3.org/2001/XMLSchema#string">Iara Dias</nomeAutor>
+</owl:NamedIndividual>
+
+<owl:NamedIndividual rdf:about="#Orbita">
+  <rdf:type rdf:resource="#Romance"/>
+  <temGeneroPrincipal rdf:resource="#FiccaoCientifica"/>
+  <temIdioma rdf:resource="#Portugues"/>
+  <temNivel rdf:resource="#Iniciante"/>
+  <temAutor rdf:resource="#LiaCosta"/>
+  <publicadoPor rdf:resource="#Horizonte"/>
+  <titulo rdf:datatype="http://www.w3.org/2001/XMLSchema#string">Órbita</titulo>
+  <codigoCatalogo rdf:datatype="http://www.w3.org/2001/XMLSchema#string">L01</codigoCatalogo>
+  <sinopse rdf:datatype="http://www.w3.org/2001/XMLSchema#string">Uma tripulação recebe sinais de uma estação abandonada.</sinopse>
+  <paginas rdf:datatype="http://www.w3.org/2001/XMLSchema#integer">164</paginas>
+  <anoPublicacao rdf:datatype="http://www.w3.org/2001/XMLSchema#integer">2021</anoPublicacao>
+</owl:NamedIndividual>
+
+<owl:NamedIndividual rdf:about="#CidadeDeSilicio">
+  <rdf:type rdf:resource="#Romance"/>
+  <temGeneroPrincipal rdf:resource="#FiccaoCientifica"/>
+  <temIdioma rdf:resource="#Portugues"/>
+  <temNivel rdf:resource="#Intermediario"/>
+  <temAutor rdf:resource="#LiaCosta"/>
+  <publicadoPor rdf:resource="#Horizonte"/>
+  <titulo rdf:datatype="http://www.w3.org/2001/XMLSchema#string">Cidade de Silício</titulo>
+  <codigoCatalogo rdf:datatype="http://www.w3.org/2001/XMLSchema#string">L02</codigoCatalogo>
+  <sinopse rdf:datatype="http://www.w3.org/2001/XMLSchema#string">Uma pesquisadora investiga a origem de uma cidade automatizada.</sinopse>
+  <paginas rdf:datatype="http://www.w3.org/2001/XMLSchema#integer">242</paginas>
+  <anoPublicacao rdf:datatype="http://www.w3.org/2001/XMLSchema#integer">2023</anoPublicacao>
+</owl:NamedIndividual>
+
+<owl:NamedIndividual rdf:about="#StarArchive">
+  <rdf:type rdf:resource="#Coletanea"/>
+  <temGeneroPrincipal rdf:resource="#FiccaoCientifica"/>
+  <temIdioma rdf:resource="#Ingles"/>
+  <temNivel rdf:resource="#Iniciante"/>
+  <temAutor rdf:resource="#RuiAlves"/>
+  <publicadoPor rdf:resource="#Horizonte"/>
+  <titulo rdf:datatype="http://www.w3.org/2001/XMLSchema#string">Star Archive</titulo>
+  <codigoCatalogo rdf:datatype="http://www.w3.org/2001/XMLSchema#string">L03</codigoCatalogo>
+  <sinopse rdf:datatype="http://www.w3.org/2001/XMLSchema#string">Contos sobre arquivos perdidos em viagens espaciais.</sinopse>
+  <paginas rdf:datatype="http://www.w3.org/2001/XMLSchema#integer">128</paginas>
+  <anoPublicacao rdf:datatype="http://www.w3.org/2001/XMLSchema#integer">2022</anoPublicacao>
+</owl:NamedIndividual>
+
+<owl:NamedIndividual rdf:about="#BosqueDeVidro">
+  <rdf:type rdf:resource="#Romance"/>
+  <temGeneroPrincipal rdf:resource="#Fantasia"/>
+  <temIdioma rdf:resource="#Portugues"/>
+  <temNivel rdf:resource="#Iniciante"/>
+  <temAutor rdf:resource="#IaraDias"/>
+  <publicadoPor rdf:resource="#Horizonte"/>
+  <titulo rdf:datatype="http://www.w3.org/2001/XMLSchema#string">Bosque de Vidro</titulo>
+  <codigoCatalogo rdf:datatype="http://www.w3.org/2001/XMLSchema#string">L04</codigoCatalogo>
+  <sinopse rdf:datatype="http://www.w3.org/2001/XMLSchema#string">Uma aprendiz descobre um bosque que muda de forma.</sinopse>
+  <paginas rdf:datatype="http://www.w3.org/2001/XMLSchema#integer">176</paginas>
+  <anoPublicacao rdf:datatype="http://www.w3.org/2001/XMLSchema#integer">2020</anoPublicacao>
+</owl:NamedIndividual>
+
+<owl:NamedIndividual rdf:about="#MapaDasBrumas">
+  <rdf:type rdf:resource="#Coletanea"/>
+  <temGeneroPrincipal rdf:resource="#Fantasia"/>
+  <temIdioma rdf:resource="#Portugues"/>
+  <temNivel rdf:resource="#Intermediario"/>
+  <temAutor rdf:resource="#IaraDias"/>
+  <publicadoPor rdf:resource="#Horizonte"/>
+  <titulo rdf:datatype="http://www.w3.org/2001/XMLSchema#string">Mapa das Brumas</titulo>
+  <codigoCatalogo rdf:datatype="http://www.w3.org/2001/XMLSchema#string">L05</codigoCatalogo>
+  <sinopse rdf:datatype="http://www.w3.org/2001/XMLSchema#string">Contos sobre mapas encantados e territórios desconhecidos.</sinopse>
+  <paginas rdf:datatype="http://www.w3.org/2001/XMLSchema#integer">201</paginas>
+  <anoPublicacao rdf:datatype="http://www.w3.org/2001/XMLSchema#integer">2024</anoPublicacao>
+</owl:NamedIndividual>
+
+<owl:NamedIndividual rdf:about="#CartaSemSelo">
+  <rdf:type rdf:resource="#Romance"/>
+  <temGeneroPrincipal rdf:resource="#Misterio"/>
+  <temIdioma rdf:resource="#Portugues"/>
+  <temNivel rdf:resource="#Iniciante"/>
+  <temAutor rdf:resource="#RuiAlves"/>
+  <publicadoPor rdf:resource="#Horizonte"/>
+  <titulo rdf:datatype="http://www.w3.org/2001/XMLSchema#string">Carta sem Selo</titulo>
+  <codigoCatalogo rdf:datatype="http://www.w3.org/2001/XMLSchema#string">L06</codigoCatalogo>
+  <sinopse rdf:datatype="http://www.w3.org/2001/XMLSchema#string">Uma carta anônima leva a uma investigação em uma pequena cidade.</sinopse>
+  <paginas rdf:datatype="http://www.w3.org/2001/XMLSchema#integer">132</paginas>
+  <anoPublicacao rdf:datatype="http://www.w3.org/2001/XMLSchema#integer">2024</anoPublicacao>
+</owl:NamedIndividual>
+
+<owl:NamedIndividual rdf:about="#Ana">
+  <rdf:type rdf:resource="#Leitor"/>
+  <prefereGenero rdf:resource="#FiccaoCientifica"/>
+  <prefereIdioma rdf:resource="#Portugues"/>
+  <rdfs:label rdf:datatype="http://www.w3.org/2001/XMLSchema#string">Ana</rdfs:label>
+</owl:NamedIndividual>
+
+<owl:AllDifferent>
+  <owl:distinctMembers rdf:parseType="Collection">
+    <rdf:Description rdf:about="#Iniciante"/>
+    <rdf:Description rdf:about="#Intermediario"/>
+  </owl:distinctMembers>
+</owl:AllDifferent>
+
+<owl:AllDifferent>
+  <owl:distinctMembers rdf:parseType="Collection">
+    <rdf:Description rdf:about="#Portugues"/>
+    <rdf:Description rdf:about="#Ingles"/>
+  </owl:distinctMembers>
+</owl:AllDifferent>
+
+<owl:AllDifferent>
+  <owl:distinctMembers rdf:parseType="Collection">
+    <rdf:Description rdf:about="#FiccaoCientifica"/>
+    <rdf:Description rdf:about="#Fantasia"/>
+    <rdf:Description rdf:about="#Misterio"/>
+  </owl:distinctMembers>
+</owl:AllDifferent>
+
+<owl:AllDisjointClasses>
+  <owl:members rdf:parseType="Collection">
+    <rdf:Description rdf:about="#Livro"/>
+    <rdf:Description rdf:about="#Leitor"/>
+    <rdf:Description rdf:about="#Autor"/>
+    <rdf:Description rdf:about="#Genero"/>
+    <rdf:Description rdf:about="#Tema"/>
+    <rdf:Description rdf:about="#Idioma"/>
+    <rdf:Description rdf:about="#Nivel"/>
+    <rdf:Description rdf:about="#Editora"/>
+  </owl:members>
+</owl:AllDisjointClasses>
+
+
+</rdf:RDF>
