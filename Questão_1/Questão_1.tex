@@ -1,0 +1,122 @@
+\documentclass[12pt,a4paper]{article}
+
+\usepackage[utf8]{inputenc}
+\usepackage[T1]{fontenc}
+\usepackage[brazil]{babel}
+\usepackage[top=3cm,left=3cm,bottom=2cm,right=2cm]{geometry}
+\usepackage{mathptmx}
+\usepackage{inconsolata}
+\usepackage{setspace}
+\usepackage{indentfirst}
+\usepackage{titlesec}
+\usepackage{booktabs}
+\usepackage{array}
+\usepackage{listings}
+\usepackage{xcolor}
+
+\onehalfspacing
+\setlength{\parindent}{1.25cm}
+
+\titleformat*{\section}{\normalfont\bfseries\normalsize}
+\titleformat*{\subsection}{\normalfont\bfseries\normalsize}
+
+\lstset{
+    basicstyle=\ttfamily\footnotesize,
+    breaklines=true,
+    columns=fullflexible,
+    keepspaces=true,
+    frame=single,
+    rulecolor=\color{black!25},
+    backgroundcolor=\color{black!4},
+    xleftmargin=0.2cm,
+    xrightmargin=0.2cm,
+    framexleftmargin=4pt,
+    framexrightmargin=4pt,
+    framextopmargin=4pt,
+    framexbottommargin=4pt,
+    literate=
+        {á}{{\'a}}1 {é}{{\'e}}1 {í}{{\'i}}1 {ó}{{\'o}}1 {ú}{{\'u}}1
+        {Á}{{\'A}}1 {É}{{\'E}}1 {Í}{{\'I}}1 {Ó}{{\'O}}1 {Ú}{{\'U}}1
+        {ã}{{\~a}}1 {õ}{{\~o}}1 {Ã}{{\~A}}1 {Õ}{{\~O}}1
+        {â}{{\^a}}1 {ê}{{\^e}}1 {ô}{{\^o}}1
+        {à}{{\`a}}1 {ç}{{\c{c}}}1 {Ç}{{\c{C}}}1
+}
+
+\begin{document}
+
+\section{Questão 1: Ontologias e grafos de conhecimento}
+
+\subsection{Comparação entre as abordagens}
+
+Em um sistema de recomendação de livros, a ontologia define os conceitos do domínio e as relações que permitem inferir novos fatos. O grafo de conhecimento reúne os livros do catálogo, seus gêneros e as preferências de leitores em uma estrutura que pode ser consultada. As duas abordagens podem operar juntas. Uma ontologia OWL 2 pode ser expressa em RDF, e o mesmo grafo RDF pode conter os axiomas da ontologia e os dados do catálogo [1, 2].
+
+\begin{table}[htbp]
+    \centering
+    \begin{tabular}{>{\raggedright\arraybackslash}p{2.7cm} >{\raggedright\arraybackslash}p{5.8cm} >{\raggedright\arraybackslash}p{6.0cm}}
+        \toprule
+        \textbf{Aspecto} & \textbf{Sistema baseado em ontologia} & \textbf{Sistema baseado em grafo de conhecimento} \\
+        \midrule
+        Representação & Classes, propriedades e axiomas definem o significado de Livro, Leitor e Gênero e suas relações. & Nós identificam livros, leitores e gêneros. Arestas rotuladas registram fatos como ``Ana prefere ficção científica''. \\
+        \addlinespace
+        Raciocínio & Um motor de inferência deduz tipos e relações a partir dos axiomas e verifica a consistência da base. & Uma consulta encontra padrões de ligações no catálogo. As deduções de uma ontologia podem ser calculadas durante a consulta ou gravadas no grafo. \\
+        \addlinespace
+        Vantagem & As deduções podem ser explicadas pelos axiomas e fatos que as sustentam. & O grafo facilita integrar dados de diferentes fontes e recuperar os caminhos que explicam uma indicação. \\
+        \addlinespace
+        Limitação & Criar e manter axiomas exige decisões sobre o domínio, e o custo da inferência depende da expressividade usada. & Os resultados dependem da qualidade das ligações cadastradas e da semântica que o sistema aplica ao grafo. \\
+        \bottomrule
+    \end{tabular}
+\end{table}
+
+\subsection{Ontologia para recomendação de livros}
+
+O exemplo usa as classes Leitor, Livro, Romance e Genero. O axioma ``Romance é subclasse de Livro'' estabelece que todo romance é um livro. A propriedade temGenero liga Livro a Genero e prefereGenero liga Leitor a Genero. A propriedade titulo associa um Livro a um texto. Ana, Orbita e FiccaoCientifica são indivíduos fictícios do exemplo.
+
+\subsection{Mapeamento da ontologia para um grafo RDF}
+
+Cada classe e cada indivíduo recebe um identificador (IRI). O predicado \textbf{rdf:type} registra a pertinência a uma classe, \textbf{rdfs:subClassOf} registra a hierarquia e as propriedades do domínio viram predicados das triplas. Um valor como o título do livro é representado por um literal. A listagem em Turtle contém os axiomas e os fatos explícitos do exemplo.
+
+\begin{lstlisting}
+@prefix : <https://example.org/biblioteca#> .
+@prefix owl: <http://www.w3.org/2002/07/owl#> .
+@prefix rdfs: <http://www.w3.org/2000/01/rdf-schema#> .
+@prefix xsd: <http://www.w3.org/2001/XMLSchema#> .
+
+:Leitor a owl:Class .
+:Livro a owl:Class .
+:Genero a owl:Class .
+:Romance a owl:Class ; rdfs:subClassOf :Livro .
+
+:temGenero a owl:ObjectProperty ;
+    rdfs:domain :Livro ; rdfs:range :Genero .
+:prefereGenero a owl:ObjectProperty ;
+    rdfs:domain :Leitor ; rdfs:range :Genero .
+:titulo a owl:DatatypeProperty ;
+    rdfs:domain :Livro ; rdfs:range xsd:string .
+
+:Ana a :Leitor ; :prefereGenero :FiccaoCientifica .
+:Orbita a :Romance ; :temGenero :FiccaoCientifica ;
+    :titulo "Órbita" .
+:FiccaoCientifica a :Genero .
+\end{lstlisting}
+
+\subsection{Inferência e recomendação}
+
+Como Orbita pertence a Romance e Romance é subclasse de Livro, o sistema pode deduzir a tripla \textbf{:Orbita a :Livro}. O domínio de temGenero também sustenta essa dedução neste exemplo. Após materializar o tipo inferido, a aplicação pode consultar livros com o mesmo gênero preferido por Ana. A consulta abaixo encontra Órbita porque os dois padrões compartilham FiccaoCientifica.
+
+\begin{lstlisting}
+PREFIX : <https://example.org/biblioteca#>
+SELECT ?livro WHERE {
+    :Ana :prefereGenero ?genero .
+    ?livro a :Livro ; :temGenero ?genero .
+}
+\end{lstlisting}
+
+A aplicação pode apresentar a justificativa ``Órbita foi indicado porque pertence ao gênero ficção científica, que Ana prefere''. O tipo Livro decorre da inferência sobre a ontologia. A indicação decorre da consulta que cruza o gênero do livro com a preferência cadastrada.
+
+\section*{Referências}
+
+\noindent [1] WORLD WIDE WEB CONSORTIUM (W3C). \textbf{OWL 2 Web Ontology Language Primer}. 2012. Disponível em: https://www.w3.org/TR/owl2-primer/.
+
+\noindent [2] WORLD WIDE WEB CONSORTIUM (W3C). \textbf{RDF 1.1 Concepts and Abstract Syntax}. 2014. Disponível em: https://www.w3.org/TR/rdf11-concepts/.
+
+\end{document}
