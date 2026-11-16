@@ -45,10 +45,12 @@ No campo prazo, use "hoje" para hoje, "amanha" para amanhã, "depois" para
 datas posteriores a amanhã e "sem prazo" apenas quando o prazo estiver ausente.
 Use prioridade media quando omitida e 'sem prazo' quando não houver prazo.
 Mapeie urgente para alta. Use 'depois' para prazo após amanhã.
-Em "concluir_ate", use o horário limite somente se a tarefa precisar terminar
-até uma hora explícita no dia planejado, por exemplo "entregar hoje até 15h".
-Nesse caso, use também prazo "hoje". Use null nos demais casos. Para um compromisso
-das 10h às 11h, extraia início fixo 10:00 e duração 60 minutos.
+Em "concluir_ate", use somente a hora-limite citada para aquela mesma tarefa
+no dia planejado, por exemplo "entregar hoje até 15h". Nesse caso, use também
+prazo "hoje". Um intervalo fixo informa início e duração. Para "reunião das
+14h às 15h", extraia fixo 14:00, duração 60 e concluir_ate null. Se outra
+tarefa precisar terminar até 15h, atribua esse limite somente a essa tarefa.
+Sem hora-limite explícita de conclusão, use null em "concluir_ate".
 Use pergunta vazia quando puder extrair os dados. Durações em minutos e
 intervalos com início e fim são suficientes. Peça esclarecimento em português
 se faltar a janela, duração ou início obrigatório, ou se o pedido envolver
@@ -61,7 +63,13 @@ urgente. Tenho também uma reunião das 9h às 10h, com prioridade alta.
 JSON: {"pergunta":"","inicio":"09:00","fim":"12:00","tarefas":[
 {"nome":"Ler","duracao":30,"prioridade":"media","prazo":"amanha","fixo":null,"concluir_ate":null},
 {"nome":"Enviar formulário","duracao":20,"prioridade":"alta","prazo":"hoje","fixo":null,"concluir_ate":"10:00"},
-{"nome":"Reunião","duracao":60,"prioridade":"alta","prazo":"sem prazo","fixo":"09:00","concluir_ate":null}]}"""
+{"nome":"Reunião","duracao":60,"prioridade":"alta","prazo":"sem prazo","fixo":"09:00","concluir_ate":null}]}
+
+Pedido: Tenho das 13h às 16h. A reunião começa às 13h e termina às 14h.
+O relatório leva 30 minutos e deve ser entregue hoje até 14h.
+JSON: {"pergunta":"","inicio":"13:00","fim":"16:00","tarefas":[
+{"nome":"Reunião","duracao":60,"prioridade":"media","prazo":"sem prazo","fixo":"13:00","concluir_ate":null},
+{"nome":"Relatório","duracao":30,"prioridade":"media","prazo":"hoje","fixo":null,"concluir_ate":"14:00"}]}"""
 
 DEMO = {
     "pergunta": "", "inicio": "14:00", "fim": "18:00",
