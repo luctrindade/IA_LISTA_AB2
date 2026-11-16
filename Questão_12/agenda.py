@@ -35,12 +35,24 @@ ESQUEMA = objeto({
 INSTRUCAO = """Extraia dados de um pedido de agenda de um único dia.
 Retorne apenas JSON. Use minutos inteiros para duração e HH:MM para horários.
 Tarefas são indivisíveis e compromissos com início fixo são obrigatórios.
+Você é um extrator de dados, não um planejador. Nunca atribua horários.
+Em "fixo", use null em toda tarefa sem hora de início explicitamente ligada a ela.
+A janela do dia, a duração e o prazo não são horários fixos de tarefa.
+No campo prazo, use "hoje" para hoje, "amanha" para amanhã, "depois" para
+datas posteriores a amanhã e "sem prazo" apenas quando o prazo estiver ausente.
 Use prioridade media quando omitida e 'sem prazo' quando não houver prazo.
 Mapeie urgente para alta. Use 'depois' para prazo após amanhã.
 Se faltar a janela, horário ou duração de uma tarefa, houver ambiguidade
 ou o pedido exigir agenda de vários dias, dependências ou divisão de tarefas,
 faça uma pergunta em português no campo pergunta. Não invente esses dados.
-Se o pedido estiver completo, pergunta deve ser uma string vazia."""
+Se o pedido estiver completo, pergunta deve ser uma string vazia.
+
+Exemplo de extração:
+Pedido: Tenho das 9h às 12h. Quero ler por 30 minutos até amanhã.
+Tenho uma reunião das 10h às 11h, com prioridade alta.
+JSON: {"pergunta":"","inicio":"09:00","fim":"12:00","tarefas":[
+{"nome":"Ler","duracao":30,"prioridade":"media","prazo":"amanha","fixo":null},
+{"nome":"Reunião","duracao":60,"prioridade":"alta","prazo":"sem prazo","fixo":"10:00"}]}"""
 
 DEMO = {
     "pergunta": "", "inicio": "14:00", "fim": "18:00",
