@@ -1,0 +1,172 @@
+\documentclass[12pt,a4paper]{article}
+
+\usepackage[utf8]{inputenc}
+\usepackage[T1]{fontenc}
+\usepackage[brazil]{babel}
+\usepackage[top=3cm,left=3cm,bottom=2cm,right=2cm]{geometry}
+\usepackage{mathptmx}
+\usepackage{inconsolata}
+\usepackage{setspace}
+\usepackage{indentfirst}
+\usepackage{titlesec}
+\usepackage{booktabs}
+\usepackage{array}
+\usepackage{listings}
+\usepackage{xcolor}
+\usepackage{xurl}
+\urlstyle{same}
+\usepackage{tikz}
+\usetikzlibrary{arrows.meta}
+
+\onehalfspacing
+\setlength{\parindent}{1.25cm}
+
+\titleformat*{\section}{\normalfont\bfseries\normalsize}
+\titleformat*{\subsection}{\normalfont\bfseries\normalsize}
+
+\lstset{
+    basicstyle=\ttfamily\footnotesize,
+    breaklines=true,
+    columns=fullflexible,
+    keepspaces=true,
+    frame=single,
+    rulecolor=\color{black!25},
+    backgroundcolor=\color{black!4},
+    xleftmargin=0.2cm,
+    xrightmargin=0.2cm,
+    framexleftmargin=4pt,
+    framexrightmargin=4pt,
+    framextopmargin=4pt,
+    framexbottommargin=4pt,
+    literate=
+        {á}{{\'a}}1 {é}{{\'e}}1 {í}{{\'i}}1 {ó}{{\'o}}1 {ú}{{\'u}}1
+        {Á}{{\'A}}1 {É}{{\'E}}1 {Í}{{\'I}}1 {Ó}{{\'O}}1 {Ú}{{\'U}}1
+        {ã}{{\~a}}1 {õ}{{\~o}}1 {Ã}{{\~A}}1 {Õ}{{\~O}}1
+        {â}{{\^a}}1 {ê}{{\^e}}1 {ô}{{\^o}}1
+        {à}{{\`a}}1 {ç}{{\c{c}}}1 {Ç}{{\c{C}}}1
+}
+
+\begin{document}
+
+\section{Questão 08: Sistema de diagnóstico com redes bayesianas}
+
+\subsection{Domínio e modelagem}
+
+A rede estima a probabilidade de influenza em um cenário fictício. As cinco variáveis são binárias. E indica contato recente conhecido com pessoa infectada. I indica presença de influenza. F, T e M indicam febre, tosse e dor muscular. A seleção dos sintomas se baseia na descrição do CDC [1]. Os valores das tabelas foram definidos para fins educacionais.
+
+\begin{figure}[htbp]
+    \centering
+    \begin{tikzpicture}[
+        nodebox/.style={draw, rounded corners=2pt, minimum width=3.8cm, minimum height=0.65cm, align=center},
+        >=Stealth
+    ]
+        \node[nodebox] (E) at (0, 2.8) {Exposição (E)};
+        \node[nodebox, fill=blue!8] (I) at (0, 1.4) {Influenza (I)};
+        \node[nodebox, minimum width=3.4cm] (F) at (-4.3, 0) {Febre (F)};
+        \node[nodebox, minimum width=3.4cm] (T) at (0, 0) {Tosse (T)};
+        \node[nodebox, minimum width=3.8cm] (M) at (4.5, 0) {Dor muscular (M)};
+
+        \draw[->] (E) -- (I);
+        \draw[->] (I) -- (F);
+        \draw[->] (I) -- (T);
+        \draw[->] (I) -- (M);
+    \end{tikzpicture}
+\end{figure}
+
+A exposição aumenta a chance de influenza no modelo, e a doença influencia os três sintomas. A rede supõe que, conhecido o estado de I, os sintomas são mutuamente independentes e independentes de E. Sem condicionar em I, os sintomas podem estar associados pela causa comum. A distribuição conjunta se fatoriza da seguinte forma.
+
+\[
+P(E, I, F, T, M) = P(E)\,P(I \mid E)\,P(F \mid I)\,P(T \mid I)\,P(M \mid I)
+\]
+
+\subsection{Tabelas de probabilidades condicionais (CPTs)}
+
+\begin{table}[htbp]
+    \centering
+    \begin{tabular}{>{\raggedright\arraybackslash}p{3.4cm} >{\raggedright\arraybackslash}p{4.6cm} >{\raggedright\arraybackslash}p{2.2cm} >{\raggedright\arraybackslash}p{2.2cm}}
+        \toprule
+        \textbf{Variável} & \textbf{Condição} & \textbf{P(Sim)} & \textbf{P(Não)} \\
+        \midrule
+        Exposição & Sem pais & 0,20 & 0,80 \\
+        \addlinespace
+        Influenza & Exposição = Não & 0,05 & 0,95 \\
+        \addlinespace
+        Influenza & Exposição = Sim & 0,30 & 0,70 \\
+        \addlinespace
+        Febre & Influenza = Não & 0,20 & 0,80 \\
+        \addlinespace
+        Febre & Influenza = Sim & 0,75 & 0,25 \\
+        \addlinespace
+        Tosse & Influenza = Não & 0,35 & 0,65 \\
+        \addlinespace
+        Tosse & Influenza = Sim & 0,80 & 0,20 \\
+        \addlinespace
+        Dor muscular & Influenza = Não & 0,15 & 0,85 \\
+        \addlinespace
+        Dor muscular & Influenza = Sim & 0,65 & 0,35 \\
+        \bottomrule
+    \end{tabular}
+\end{table}
+
+A exposição é tratada como menos frequente que sua ausência e eleva a probabilidade da doença de 5\% para 30\%. A tosse foi modelada como o sintoma mais comum nos dois grupos. Febre e dor muscular têm menor frequência de fundo. As probabilidades ficam entre 0 e 1 para admitir sintomas por outras causas e quadros de influenza sem todos os sintomas.
+
+\subsection{Inferência exata}
+
+O programa lê o grafo e as CPTs de \texttt{modelo\_influenza.json}. A biblioteca \texttt{pgmpy} [2] representa o grafo com \texttt{DiscreteBayesianNetwork} e as tabelas com \texttt{TabularCPD}.
+
+A inferência exata usa \texttt{VariableElimination}. O algoritmo condiciona os fatores às observações, multiplica os fatores relevantes e soma sobre os estados das variáveis eliminadas. A distribuição normalizada fornece $P(I=\mathrm{Sim})$ dadas as evidências.
+
+Sem observações, $P(I=\mathrm{Sim}) = 0{,}20 \times 0{,}30 + 0{,}80 \times 0{,}05 = 0{,}10$.
+Com febre observada, obtemos
+\[
+P(I=\mathrm{Sim}\mid F=\mathrm{Sim})
+  = \frac{0{,}10 \times 0{,}75}{0{,}10 \times 0{,}75 + 0{,}90 \times 0{,}20}
+  \approx 29{,}41\%.
+\]
+Esses cálculos manuais conferem com a saída do programa.
+
+Um relato incerto é fornecido ao \texttt{pgmpy} como evidência virtual. Para dor muscular, os pesos 0,2 (Não) e 0,8 (Sim) tornam o relato quatro vezes mais provável se o sintoma estiver presente. O programa divide ambos os pesos pelo maior antes da consulta. Como o fator é comum aos dois estados, a razão de verossimilhanças e a distribuição posterior são preservadas.
+
+\subsection{Experimentos}
+
+Todos os cenários começam com a probabilidade a priori de 10,00\%. As evidências de uma mesma linha são acumuladas na ordem apresentada.
+
+\begin{table}[htbp]
+    \centering
+    \begin{tabular}{>{\raggedright\arraybackslash}p{4.8cm} >{\raggedright\arraybackslash}p{10.0cm}}
+        \toprule
+        \textbf{Cenário} & \textbf{Evidências e atualizações de P(I = Sim)} \\
+        \midrule
+        1. Evidência incompleta & Febre = Sim: 29,41\%. Tosse e dor muscular ficam desconhecidas. \\
+        \addlinespace
+        2. Sintomas sucessivos & Febre = Sim: 29,41\%. Acrescenta tosse = Sim: 48,78\%. Acrescenta dor muscular = Sim: 80,50\%. \\
+        \addlinespace
+        3. Exposição e ausência de febre & Exposição = Sim: 30,00\%. Acrescenta febre = Não: 11,81\%. Acrescenta tosse = Sim: 23,44\%. \\
+        \addlinespace
+        4. Relato incerto & Febre = Sim: 29,41\%. Acrescenta relato de dor muscular com pesos 0,2 e 0,8: 45,88\%. \\
+        \bottomrule
+    \end{tabular}
+\end{table}
+
+A dor muscular observada teve o maior efeito na segunda sequência, pois é proporcionalmente mais frequente com influenza que sem a doença. No cenário 3, a ausência observada de febre reduz o resultado, e a tosse volta a elevá-lo. No cenário 4, o relato incerto altera a estimativa, mas tem efeito menor que uma observação positiva confirmada.
+
+\subsection{Discussão e demonstração}
+
+Em comparação com regras determinísticas, a rede combina sinais conflitantes, distingue ausência de falta de informação e produz uma estimativa gradual. As CPTs são hipotéticas, e a independência entre sintomas pode superestimar a força de evidências correlacionadas. Uma extensão poderia incluir outras doenças respiratórias, vacinação e resultados de exames, com parâmetros estimados e calibrados em dados adequados. O protótipo tem finalidade acadêmica.
+
+Na pasta \texttt{Questão\_08}, instale a dependência e execute o programa para reproduzir os quatro cenários.
+
+\begin{lstlisting}
+python -m pip install -r requirements.txt
+python rede_bayesiana.py
+\end{lstlisting}
+
+Para uma consulta própria, use, por exemplo, \texttt{python rede\_bayesiana.py febre=sim tosse=nao}.
+
+\section*{Referências}
+
+\noindent [1] CDC. \textbf{Signs and Symptoms of Flu}. Disponível em: \url{https://www.cdc.gov/flu/signs-symptoms/index.html}.
+
+\noindent [2] PGMPY. \textbf{Inference in Discrete Bayesian Network}. Disponível em: \url{https://pgmpy.org/examples/Inference_Discrete_BN.html}.
+
+\end{document}

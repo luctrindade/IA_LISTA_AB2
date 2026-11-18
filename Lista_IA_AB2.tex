@@ -1,0 +1,117 @@
+\documentclass[12pt,a4paper]{article}
+
+\usepackage[utf8]{inputenc}
+\usepackage[T1]{fontenc}
+\usepackage[brazil]{babel}
+\usepackage[top=3cm,left=3cm,bottom=2cm,right=2cm]{geometry}
+\usepackage{mathptmx}
+\usepackage{inconsolata}
+\usepackage{setspace}
+\usepackage{indentfirst}
+\usepackage{titlesec}
+\usepackage{booktabs}
+\usepackage{array}
+\usepackage{listings}
+\usepackage{xcolor}
+\usepackage{amsmath}
+\usepackage{float}
+\usepackage{xurl}
+\urlstyle{same}
+\usepackage{tikz}
+\usetikzlibrary{arrows.meta}
+\usepackage{standalone}
+\usepackage[titles]{tocloft}
+\renewcommand{\cftsecleader}{\cftdotfill{\cftdotsep}}
+\usepackage[hidelinks]{hyperref}
+
+\onehalfspacing
+\setlength{\parindent}{1.25cm}
+
+\titleformat*{\section}{\normalfont\bfseries\normalsize}
+\titleformat*{\subsection}{\normalfont\bfseries\normalsize}
+\titleformat*{\subsubsection}{\normalfont\bfseries\normalsize}
+
+\lstset{
+    basicstyle=\ttfamily\footnotesize,
+    breaklines=true,
+    columns=fullflexible,
+    keepspaces=true,
+    frame=single,
+    rulecolor=\color{black!25},
+    backgroundcolor=\color{black!4},
+    xleftmargin=0.2cm,
+    xrightmargin=0.2cm,
+    framexleftmargin=4pt,
+    framexrightmargin=4pt,
+    framextopmargin=4pt,
+    framexbottommargin=4pt,
+    literate=
+        {á}{{\'a}}1 {é}{{\'e}}1 {í}{{\'i}}1 {ó}{{\'o}}1 {ú}{{\'u}}1
+        {Á}{{\'A}}1 {É}{{\'E}}1 {Í}{{\'I}}1 {Ó}{{\'O}}1 {Ú}{{\'U}}1
+        {ã}{{\~a}}1 {õ}{{\~o}}1 {Ã}{{\~A}}1 {Õ}{{\~O}}1
+        {â}{{\^a}}1 {ê}{{\^e}}1 {ô}{{\^o}}1
+        {à}{{\`a}}1 {ç}{{\c{c}}}1 {Ç}{{\c{C}}}1
+}
+
+\begin{document}
+
+\begin{titlepage}
+    \centering
+    \textbf{UNIVERSIDADE FEDERAL DE ALAGOAS}\\
+    \textbf{INSTITUTO DE COMPUTAÇÃO}\\
+    \textbf{CIÊNCIA DA COMPUTAÇÃO}
+
+    \vspace*{\stretch{2}}
+
+    {\textbf{LISTA INTELIGÊNCIA ARTIFICIAL AB2}}
+
+    \vfill
+
+    \textbf{FELIPE LIMA ARAGÃO}\\
+    \textbf{LUCAS TRINDADE DE SOUZA}\\
+    \textbf{MARCOS VINICIUS DA SILVA}
+
+    \vfill
+
+    Maceió/AL\\
+    2026
+\end{titlepage}
+
+{
+\titleformat*{\section}{\normalfont\bfseries\normalsize\centering}
+\setcounter{tocdepth}{1}
+\tableofcontents
+}
+\clearpage
+
+\input{Questão_01/Questão_01.tex}
+\clearpage
+\input{Questão_02/Questão_02.tex}
+\clearpage
+\input{Questão_03/Questão_03.tex}
+\clearpage
+\input{Questão_04/Questão_04.tex}
+\clearpage
+\input{Questão_05/Questão_05.tex}
+\clearpage
+\input{Questão_06/Questão_06.tex}
+\clearpage
+\input{Questão_07/Questão_07.tex}
+\clearpage
+\input{Questão_08/Questão_08.tex}
+\clearpage
+\input{Questão_09/Questão_09.tex}
+\clearpage
+\input{Questão_10/Questão_10.tex}
+\clearpage
+\input{Questão_11/Questão_11.tex}
+\clearpage
+\input{Questão_12/Questão_12.tex}
+\clearpage
+\input{Questão_13/Questão_13.tex}
+\clearpage
+\input{Questão_14/Questão_14.tex}
+\clearpage
+\input{Questão_15/Questão_15.tex}
+
+\end{document}

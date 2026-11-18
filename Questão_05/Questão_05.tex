@@ -1,0 +1,126 @@
+\documentclass[12pt,a4paper]{article}
+
+\usepackage[utf8]{inputenc}
+\usepackage[T1]{fontenc}
+\usepackage[brazil]{babel}
+\usepackage[top=3cm,left=3cm,bottom=2cm,right=2cm]{geometry}
+\usepackage{mathptmx}
+\usepackage{inconsolata}
+\usepackage{setspace}
+\usepackage{indentfirst}
+\usepackage{titlesec}
+\usepackage{booktabs}
+\usepackage{array}
+\usepackage{listings}
+\usepackage{xcolor}
+\usepackage{xurl}
+\urlstyle{same}
+
+\onehalfspacing
+\setlength{\parindent}{1.25cm}
+
+\titleformat*{\section}{\normalfont\bfseries\normalsize}
+\titleformat*{\subsection}{\normalfont\bfseries\normalsize}
+
+\lstset{
+    basicstyle=\ttfamily\footnotesize,
+    breaklines=true,
+    columns=fullflexible,
+    keepspaces=true,
+    frame=single,
+    rulecolor=\color{black!25},
+    backgroundcolor=\color{black!4},
+    xleftmargin=0.2cm,
+    xrightmargin=0.2cm,
+    framexleftmargin=4pt,
+    framexrightmargin=4pt,
+    framextopmargin=4pt,
+    framexbottommargin=4pt,
+    literate=
+        {á}{{\'a}}1 {é}{{\'e}}1 {í}{{\'i}}1 {ó}{{\'o}}1 {ú}{{\'u}}1
+        {Á}{{\'A}}1 {É}{{\'E}}1 {Í}{{\'I}}1 {Ó}{{\'O}}1 {Ú}{{\'U}}1
+        {ã}{{\~a}}1 {õ}{{\~o}}1 {Ã}{{\~A}}1 {Õ}{{\~O}}1
+        {â}{{\^a}}1 {ê}{{\^e}}1 {ô}{{\^o}}1
+        {à}{{\`a}}1 {ç}{{\c{c}}}1 {Ç}{{\c{C}}}1
+}
+
+\begin{document}
+
+\section{Questão 05: Inferência em modelos de linguagem}
+
+\subsection{Objetivo e escopo}
+
+O vídeo da IBM \textit{What Is LLM Inference? How AI Models Generate Responses} explica o que acontece entre o envio de um prompt e a chegada da resposta ao usuário. Este resumo acompanha esse percurso, desde a preparação da entrada e o encaminhamento da solicitação até a geração do texto. O artigo técnico da IBM e o estudo sobre o vLLM complementam a discussão sobre memória e desempenho.
+
+O vídeo começa pela diferença entre treinar um modelo e executá-lo. Durante o treinamento, os parâmetros da rede são ajustados a partir dos dados. Quando esse processo termina, o modelo pode ser armazenado como um conjunto de pesos e carregado para uso. Na inferência, esses pesos permanecem fixos enquanto a rede processa uma entrada nova. Duas pessoas podem fazer pedidos diferentes ao mesmo modelo, e cada resposta é calculada a partir do contexto enviado naquela solicitação.
+
+Essa distinção explica por que a inferência tem um custo recorrente. Em um assistente de programação, por exemplo, cada novo pedido aciona outra execução, ainda que o modelo seja o mesmo. Em um serviço com muitas pessoas conectadas, o custo de todas essas execuções se acumula. Seu peso em relação ao custo do treinamento depende da escala de uso, do modelo e da infraestrutura. O vídeo apresenta essa repetição como a razão para prestar atenção à eficiência do serviço.
+
+Os parâmetros aprendidos determinam os cálculos do modelo, mas a execução depende de um motor de inferência. É ele que carrega e executa o modelo, organiza a fila de pedidos e administra a memória e o trabalho dos aceleradores. O vídeo menciona vLLM, Ollama e llama.cpp como exemplos. Quando uma aplicação envia um pedido, ela conversa com uma interface de serviço. Do outro lado, o motor precisa fazer com que a solicitação chegue ao modelo e que os resultados voltem à aplicação em tempo útil.
+
+\subsection{Da solicitação à fila de execução}
+
+O vídeo acompanha uma solicitação enviada por API e observa que diferentes motores podem aceitar um formato compatível com a API da OpenAI. Isso reduz o trabalho de integração quando a aplicação troca de serviço e os campos usados são aceitos em ambos. A troca ainda pode exigir a escolha de outro identificador de modelo, a configuração da autenticação e a verificação das opções disponíveis. O formato compartilhado diz respeito à comunicação com o serviço. Cada modelo continua tendo seu próprio vocabulário e comportamento.
+
+Antes de fazer cálculos com a mensagem, o sistema precisa representá-la numericamente. O tokenizador divide o texto em unidades, que podem ser palavras, partes de palavras ou sinais de pontuação, e associa cada unidade a um identificador do vocabulário. Dentro do modelo, esses identificadores são associados a vetores. A divisão depende do tokenizador. Uma palavra inteira para um modelo pode ocupar várias posições para outro. Em serviços que cobram por token, essa diferença também altera o custo de uma mesma entrada.
+
+A entrada efetiva pode reunir a pergunta visível, instruções da aplicação e trechos de mensagens anteriores. Imagine alguém que pergunta apenas ``E por quê?'' em um chat. Para relacionar a pergunta ao assunto, a aplicação pode incluir o histórico relevante. A mensagem é curta, mas o prompt processado pode ser longo. Essa distinção ajuda a interpretar o comprimento da entrada e explica por que duas mensagens iguais podem levar a respostas diferentes.
+
+Quando o serviço é remoto, o pedido pode passar por autenticação antes de chegar ao hardware. O vídeo descreve um roteador que considera a disponibilidade dos recursos e características da solicitação, como o comprimento do prompt. Depois, o escalonador organiza quais pedidos serão executados juntos. A tokenização, a autenticação e o roteamento podem ocorrer em pontos diferentes conforme a instalação. O essencial é que a solicitação chegue ao motor com uma entrada válida e encontre recursos para ser processada.
+
+Uma GPU pode trabalhar com várias solicitações ao mesmo tempo, e agrupá-las evita dedicar toda a capacidade a um único pedido pequeno. O desafio aparece quando pedidos que entraram juntos terminam em momentos diferentes. No \textit{continuous batching}, novas solicitações ocupam posições deixadas por outras que concluíram a geração. O motor ajusta o lote ao longo da execução, o que ajuda a aproveitar o hardware sem esperar que todos os pedidos do grupo inicial terminem.
+
+\subsection{Prefill e KV Cache}
+
+Quando a solicitação finalmente entra no modelo, há uma diferença entre preparar o contexto e escrever a resposta. Na preparação, todos os tokens do prompt já são conhecidos. Isso permite processar suas posições em conjunto, respeitando a máscara causal que impede cada posição de consultar as seguintes. Depois da primeira escolha, só é possível avançar naquela mesma sequência quando o token anterior estiver disponível. O vídeo chama essas duas fases de Prefill e Decode.
+
+\begin{table}[htbp]
+    \centering
+    \begin{tabular}{>{\raggedright\arraybackslash}p{2.2cm} >{\raggedright\arraybackslash}p{7.2cm} >{\raggedright\arraybackslash}p{5.1cm}}
+        \toprule
+        \textbf{Etapa} & \textbf{O que o modelo faz} & \textbf{Como isso aparece para o usuário} \\
+        \midrule
+        Prefill & Processa o prompt, prepara o KV Cache e produz os escores usados na escolha do primeiro token. & Um prompt longo pode aumentar a espera inicial. \\
+        \addlinespace
+        Decode & Processa o token escolhido, consulta o estado acumulado e calcula a próxima distribuição. & Uma saída mais longa exige mais passos até terminar. \\
+        \bottomrule
+    \end{tabular}
+\end{table}
+
+Em cada camada de atenção, o modelo calcula consultas, chaves e valores. Para uma posição nova, a consulta é comparada às chaves disponíveis para atribuir pesos aos vetores de valor. O KV Cache guarda as chaves e os valores já produzidos nas camadas de atenção. Assim, a próxima posição pode usar os vetores anteriores sem reconstruí-los a partir do início do prompt. A leitura do cache continua fazendo parte do cálculo, e as chaves e os valores da posição recém-processada são acrescentados para uso posterior.
+
+O termo \textit{cache} descreve um estado da execução. As informações ali guardadas representam o contexto processado para aquela sequência. Elas não são incorporadas aos parâmetros do modelo. Ao mesmo tempo, reutilizar esses vetores exige reservá-los em memória. À medida que a entrada e a resposta crescem, o mesmo ocorre com a quantidade de posições que precisam ser mantidas em uma implementação densa usual. Com muitos pedidos ativos, o motor administra os caches de todos eles.
+
+O trabalho sobre o vLLM aprofunda essa questão. O PagedAttention permite alocar o KV Cache em blocos e evitar a exigência de uma área contígua para toda a sequência. À medida que a geração avança, o sistema pode reservar blocos adicionais. Esse arranjo reduz desperdícios de alocação e ajuda a manter mais solicitações ativas quando a memória disponível é limitada.
+
+\subsection{Decode e geração da resposta}
+
+Os escores obtidos ao final do Prefill indicam quais tokens poderiam iniciar a resposta. Esses valores, chamados \textit{logits}, são convertidos em uma distribuição sobre o vocabulário. A estratégia de geração decide qual token usar. A escolha gulosa seleciona o de maior escore. A amostragem pode selecionar alternativas com base nas probabilidades, e a temperatura ajusta quanto a distribuição favorece os candidatos mais bem pontuados. O mesmo contexto pode, portanto, gerar respostas diferentes quando se usa amostragem.
+
+Depois de escolhida, a primeira unidade de saída se torna a entrada da próxima passagem pelo modelo. No Decode, a rede usa essa unidade e as chaves e os valores do KV Cache para produzir novos escores. O próximo token é selecionado e o processo se repete. A geração pode parar quando surge um token de fim, quando chega ao limite configurado ou quando outro critério de parada é satisfeito. As etapas são dependentes dentro da mesma sequência, embora o motor possa avançar diferentes pedidos em conjunto.
+
+Considere a frase ``A capital do Brasil é'' em um pedido que exige uma resposta de uma palavra. Ao fim do Prefill, o modelo pode atribuir um escore alto a um token que inicia ``Brasília''. Se o tokenizador representar o nome inteiro em um único token, essa escolha já completa a palavra. Se ele dividir o nome em partes, a primeira escolha produz só um fragmento. Na passagem seguinte, esse fragmento altera o contexto e ajuda a determinar qual continuação terá maior probabilidade. A divisão é ilustrativa e depende do vocabulário real do modelo.
+
+No \textit{streaming}, a aplicação envia trechos da saída enquanto a geração continua. O usuário pode começar a ler antes que a resposta esteja completa. A unidade recebida pela interface nem sempre corresponde a uma palavra ou a um único token, pois o serviço pode agrupar trechos na transmissão. O que se percebe na tela é o resultado de uma cadeia que inclui cálculo no modelo, envio pela rede e exibição pela aplicação.
+
+O vídeo observa que o Decode frequentemente esbarra na largura de banda da memória. Cada passo precisa acessar os pesos e consultar o KV Cache, enquanto o Prefill pode aproveitar muitas operações paralelas sobre o prompt inteiro. A distribuição do trabalho varia com o hardware, o modelo e o número de pedidos no lote. Essa diferença de gargalos ajuda a entender por que a velocidade com que a resposta começa e a velocidade com que ela continua precisam ser medidas separadamente.
+
+\subsection{Desempenho percebido e capacidade do serviço}
+
+O vídeo apresenta duas medidas de latência. O TTFT vai do envio do pedido ao recebimento do primeiro token. O Prefill contribui para esse tempo, mas a medida percebida pelo usuário pode incluir fila, rede e preparação da entrada. Já a ITL mede o intervalo entre tokens sucessivos enquanto a resposta é entregue. Ela ajuda a observar o ritmo do Decode. Um resultado alto em uma métrica pede uma investigação diferente de um resultado alto na outra.
+
+Um exemplo hipotético mostra como os números se combinam. Suponha que o primeiro token chegue em 1,2 segundo e que os 99 intervalos seguintes durem, em média, 40 milissegundos. Uma resposta com 100 tokens terminaria de chegar em cerca de 5,16 segundos. Se a saída tiver apenas 50 tokens, mantendo o mesmo TTFT e a mesma ITL média, o tempo cairia para cerca de 3,16 segundos. O exemplo distingue o custo de iniciar a geração do custo de continuar até o fim.
+
+O serviço também precisa medir a vazão, como o número de tokens de saída produzidos por segundo por todas as solicitações. Aumentar o lote pode elevar a vazão total e, ao mesmo tempo, alongar a espera de alguns pedidos se eles permanecerem mais tempo na fila ou disputarem memória. Em uma conversa, interessa entregar o primeiro trecho rapidamente e manter o texto avançando. Em uma tarefa de processamento de documentos, a capacidade total pode pesar mais do que a espera de uma solicitação isolada.
+
+Se a resposta demora a começar, as primeiras hipóteses incluem fila e excesso de contexto. Perfis de latência e comprimento do prompt ajudam a distinguir essas causas. Se a resposta começa cedo e demora a terminar, a ITL e a quantidade de tokens gerados mostram se o problema está no ritmo da execução ou na extensão da saída. Assim, reduzir o contexto quando ele é redundante e limitar respostas quando a tarefa comporta concisão atacam partes diferentes do percurso que o vídeo descreve.
+
+\section*{Referências}
+
+\noindent [1] IBM. \textbf{What Is LLM Inference? How AI Models Generate Responses}. Vídeo indicado no enunciado, consultado pela transcrição fornecida. Disponível em: \url{https://www.youtube.com/watch?v=615-yWyS1n0}.
+
+\noindent [2] IBM. \textbf{What is LLM inference?} IBM Think. Disponível em: \url{https://www.ibm.com/think/topics/llm-inference}.
+
+\noindent [3] KWON, W. et al. \textbf{Efficient Memory Management for Large Language Model Serving with PagedAttention}. SOSP, 2023. Disponível em: \url{https://arxiv.org/abs/2309.06180}.
+
+\end{document}

@@ -1,0 +1,116 @@
+\documentclass[12pt,a4paper]{article}
+
+\usepackage[utf8]{inputenc}
+\usepackage[T1]{fontenc}
+\usepackage[brazil]{babel}
+\usepackage[top=3cm,left=3cm,bottom=2cm,right=2cm]{geometry}
+\usepackage{mathptmx}
+\usepackage{inconsolata}
+\usepackage{setspace}
+\usepackage{indentfirst}
+\usepackage{titlesec}
+\usepackage{booktabs}
+\usepackage{array}
+\usepackage{listings}
+\usepackage{xcolor}
+\usepackage{xurl}
+\urlstyle{same}
+
+\onehalfspacing
+\setlength{\parindent}{1.25cm}
+
+\titleformat*{\section}{\normalfont\bfseries\normalsize}
+\titleformat*{\subsection}{\normalfont\bfseries\normalsize}
+
+\lstset{
+    basicstyle=\ttfamily\footnotesize,
+    breaklines=true,
+    columns=fullflexible,
+    keepspaces=true,
+    frame=single,
+    rulecolor=\color{black!25},
+    backgroundcolor=\color{black!4},
+    xleftmargin=0.2cm,
+    xrightmargin=0.2cm,
+    framexleftmargin=4pt,
+    framexrightmargin=4pt,
+    framextopmargin=4pt,
+    framexbottommargin=4pt,
+    literate=
+        {á}{{\'a}}1 {é}{{\'e}}1 {í}{{\'i}}1 {ó}{{\'o}}1 {ú}{{\'u}}1
+        {Á}{{\'A}}1 {É}{{\'E}}1 {Í}{{\'I}}1 {Ó}{{\'O}}1 {Ú}{{\'U}}1
+        {ã}{{\~a}}1 {õ}{{\~o}}1 {Ã}{{\~A}}1 {Õ}{{\~O}}1
+        {â}{{\^a}}1 {ê}{{\^e}}1 {ô}{{\^o}}1
+        {à}{{\`a}}1 {ç}{{\c{c}}}1 {Ç}{{\c{C}}}1
+}
+
+\begin{document}
+
+\section{Questão 03: ELIZA, PARRY e ALICE}
+
+\subsection{ELIZA e o roteiro DOCTOR}
+
+Joseph Weizenbaum apresentou o ELIZA em 1966. O programa executava roteiros de conversação. Seu roteiro mais conhecido, DOCTOR, imitava o estilo de um psicoterapeuta rogeriano ao devolver perguntas abertas, reformular partes das falas e convidar o usuário a desenvolver o que havia dito. A separação entre motor e roteiro permitia mudar as regras sem reescrever o programa [1].
+
+\subsection{Regras e algoritmo}
+
+\textbf{1. Seleção de palavras-chave.} O programa examina a entrada e identifica palavras que acionam regras do roteiro. Quando há várias palavras-chave candidatas, sua precedência orienta a ordem de tentativa.
+
+\textbf{2. Decomposição.} Para a palavra-chave selecionada, o motor testa padrões com palavras fixas e segmentos variáveis. Um padrão como (0 EU SINTO 0) encontra a sequência EU SINTO e captura o trecho seguinte. Na notação do artigo, 0 aceita uma quantidade arbitrária de palavras, inclusive nenhuma.
+
+\textbf{3. Remontagem.} Quando um padrão casa com a entrada, a regra de remontagem combina texto fixo com trechos capturados. Substituições de perspectiva ajustam formas como ``meu'' para ``seu''. O roteiro pode alternar entre várias remontagens para um mesmo padrão.
+
+\textbf{4. Memória e resposta de reserva.} O roteiro original podia guardar uma reformulação associada à palavra MY e retomá-la em certas ocasiões. Quando o motor esgota as regras aplicáveis, pode recorrer a uma lembrança disponível nas condições previstas pelo roteiro ou a uma resposta genérica. Esse mecanismo recupera texto preparado anteriormente [1].
+
+\subsection{Diálogo anotado}
+
+O diálogo a seguir foi elaborado em português para demonstrar as regras passo a passo. As falas e os moldes são uma adaptação didática do DOCTOR.
+
+\noindent \textbf{1. Usuário:} Eu sinto medo de errar.\\
+\textbf{ELIZA:} Há quanto tempo você sente medo de errar?
+
+A palavra-chave SINTO ativa o padrão (0 EU SINTO 0). O quarto segmento captura ``medo de errar''. A remontagem insere esse trecho em ``Há quanto tempo você sente [4]?''. A pergunta acompanha o tema porque reaproveita as palavras do usuário.
+
+\noindent \textbf{2. Usuário:} Meu pai cobra muito de mim.\\
+\textbf{ELIZA:} Conte-me mais sobre seu pai.
+
+Neste roteiro, PAI tem precedência sobre MEU. O padrão (0 MEU PAI 0) identifica a referência familiar. A remontagem usa ``seu pai'' e deixa de fora o trecho sobre a cobrança. A resposta mantém o assunto geral, mas perde a informação que motivou a fala.
+
+\noindent \textbf{3. Usuário:} Porque ele acha que isso ajuda.\\
+\textbf{ELIZA:} Essa é a única razão?
+
+PORQUE ativa o padrão (PORQUE 0), que captura ``ele acha que isso ajuda''. A remontagem escolhida devolve uma pergunta fixa e descarta o trecho capturado. A resposta soa plausível no contexto, embora a regra não resolva a quem ``ele'' se refere nem o que ``isso'' significa.
+
+\noindent \textbf{4. Usuário:} Eu sinto que meu computador está lento.\\
+\textbf{ELIZA:} Há quanto tempo você sente que seu computador está lento?
+
+O padrão da primeira fala também aceita ``que meu computador está lento''. A remontagem reinsere o trecho com a troca de ``meu'' por ``seu''. O molde trata uma observação sobre um computador como se fosse uma fala sobre sentimentos. Aqui, o roteiro didático reutiliza o mesmo molde para evidenciar a falha.
+
+\noindent \textbf{5. Usuário:} Ontem foi diferente.\\
+\textbf{ELIZA:} Pode continuar?
+
+Nenhuma palavra-chave do roteiro didático se aplica e a demonstração usa a resposta genérica de reserva. A pergunta mantém a conversa aberta, mas não investiga o que mudou nem retoma uma entidade das falas anteriores.
+
+\subsection{Evolução dos mecanismos de conversação}
+
+\textbf{ELIZA (1966).} A conversa é conduzida pela forma da entrada. Palavras-chave selecionam regras, padrões extraem trechos e moldes transformam esses trechos em respostas. A memória pode recuperar frases preparadas, com alcance limitado [1].
+
+\textbf{PARRY (1971--1972).} A equipe de Kenneth Colby em Stanford descreveu uma simulação de processos paranoides em 1971 e publicou testes de indistinguibilidade em 1972. PARRY assume o papel de paciente e incorpora um modelo interno que influencia como interpreta perguntas e escolhe respostas. Isso permite sustentar uma postura de desconfiança entre turnos. O RFC 439, publicado em janeiro de 1973, documenta uma conversa entre PARRY e uma implementação do DOCTOR [2--4].
+
+\textbf{ALICE e AIML.} ALICE (Artificial Linguistic Internet Computer Entity), de Richard Wallace, é um chatbot baseado em regras. AIML (Artificial Intelligence Markup Language) é a linguagem usada para escrever categorias de diálogo, normalmente em XML. Cada categoria associa um padrão de entrada a um molde de resposta. Uma categoria pode levar em conta a fala anterior do bot com \texttt{<that>}, o assunto da conversa com \texttt{<topic>} e redirecionar a entrada para outra categoria com \texttt{<srai>}. Esses recursos permitem que ``sim'', por exemplo, acione uma resposta diferente conforme a pergunta anterior [5].
+
+Os três sistemas ilustram escolhas distintas para produzir continuidade. ELIZA explora os próprios termos do usuário. PARRY mantém um modelo interno que orienta o comportamento do personagem. ALICE amplia o repertório de padrões e oferece recursos explícitos de contexto e reutilização de respostas. No diálogo anotado, um mecanismo como \texttt{<that>} poderia ajudar a distinguir respostas curtas a perguntas diferentes. Ainda seria preciso escrever categorias que contemplassem cada situação.
+
+\section*{Referências}
+
+\noindent [1] WEIZENBAUM, J. \textbf{ELIZA: A Computer Program for the Study of Natural Language Communication Between Man and Machine}. Communications of the ACM, 1966. Disponível em: \url{https://web.stanford.edu/class/cs124/p36-weizenabaum.pdf}.
+
+\noindent [2] COLBY, K. M.; WEBER, S.; HILF, F. D. \textbf{Artificial Paranoia}. Artificial Intelligence, 1971. Disponível em: \url{https://doi.org/10.1016/0004-3702(71)90002-6}.
+
+\noindent [3] COLBY, K. M. et al. \textbf{Turing-like indistinguishability tests for the validation of computer simulation of paranoid processes}. Artificial Intelligence, 1972. Disponível em: \url{https://doi.org/10.1016/0004-3702(72)90049-5}.
+
+\noindent [4] CERF, V. \textbf{PARRY Encounters the DOCTOR}. RFC 439, 1973. Disponível em: \url{https://www.rfc-editor.org/rfc/rfc439}.
+
+\noindent [5] WALLACE, R. S. \textbf{AIML 2.0 Working Draft}. ALICE A.I. Foundation, 2014. Disponível em: \url{https://github.com/AIML-Foundation/AIML-2.0-Spec/blob/master/aiml.md}.
+
+\end{document}

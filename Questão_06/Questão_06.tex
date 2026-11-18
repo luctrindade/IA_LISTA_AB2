@@ -1,0 +1,167 @@
+\documentclass[12pt,a4paper]{article}
+
+\usepackage[utf8]{inputenc}
+\usepackage[T1]{fontenc}
+\usepackage[brazil]{babel}
+\usepackage[top=3cm,left=3cm,bottom=2cm,right=2cm]{geometry}
+\usepackage{mathptmx}
+\usepackage{inconsolata}
+\usepackage{setspace}
+\usepackage{indentfirst}
+\usepackage{titlesec}
+\usepackage{booktabs}
+\usepackage{array}
+\usepackage{listings}
+\usepackage{xcolor}
+\usepackage{tikz}
+
+\onehalfspacing
+\setlength{\parindent}{1.25cm}
+
+\titleformat*{\section}{\normalfont\bfseries\normalsize}
+\titleformat*{\subsection}{\normalfont\bfseries\normalsize}
+
+\lstset{
+    basicstyle=\ttfamily\footnotesize,
+    breaklines=true,
+    columns=fullflexible,
+    keepspaces=true,
+    frame=single,
+    rulecolor=\color{black!25},
+    backgroundcolor=\color{black!4},
+    xleftmargin=0.2cm,
+    xrightmargin=0.2cm,
+    framexleftmargin=4pt,
+    framexrightmargin=4pt,
+    framextopmargin=4pt,
+    framexbottommargin=4pt,
+    literate=
+        {á}{{\'a}}1 {é}{{\'e}}1 {í}{{\'i}}1 {ó}{{\'o}}1 {ú}{{\'u}}1
+        {Á}{{\'A}}1 {É}{{\'E}}1 {Í}{{\'I}}1 {Ó}{{\'O}}1 {Ú}{{\'U}}1
+        {ã}{{\~a}}1 {õ}{{\~o}}1 {Ã}{{\~A}}1 {Õ}{{\~O}}1
+        {â}{{\^a}}1 {ê}{{\^e}}1 {ô}{{\^o}}1
+        {à}{{\`a}}1 {ç}{{\c{c}}}1 {Ç}{{\c{C}}}1
+}
+
+\begin{document}
+
+\section{Questão 06: Controle fuzzy da ventilação de uma sala}
+
+O sistema recebe a temperatura e a umidade relativa de uma sala e calcula o comando percentual de um ventilador. As regras favorecem ventilação mais alta em condições quentes ou úmidas e produzem transições graduais. O modelo foi implementado em Python com a inferência de Mamdani [1].
+
+\subsection{Variáveis e funções de pertinência}
+
+As entradas são temperatura $T$ em $[16, 40]\;^{\circ}$C e umidade relativa $U$ em $[0, 100]\%$. A saída $V$ tem universo $[0, 100]\%$ e representa o comando do ventilador. Os intervalos e os pontos da tabela são escolhas didáticas e podem ser ajustados para outra sala.
+
+\begin{table}[htbp]
+    \centering
+    \caption{Pontos $(a, b, c, d)$ das funções de pertinência}
+    \begin{tabular}{>{\raggedright\arraybackslash}p{4.2cm} >{\raggedright\arraybackslash}p{2.5cm} >{\raggedright\arraybackslash}p{4.2cm}}
+        \toprule
+        \textbf{Variável} & \textbf{Termo} & \textbf{Pontos (a, b, c, d)} \\
+        \midrule
+        Temperatura ($^{\circ}$C) & Fria & (16, 16, 20, 25) \\
+        \addlinespace
+        Temperatura ($^{\circ}$C) & Amena & (21, 26, 26, 31) \\
+        \addlinespace
+        Temperatura ($^{\circ}$C) & Quente & (27, 32, 40, 40) \\
+        \addlinespace
+        Umidade (\%) & Baixa & (0, 0, 30, 50) \\
+        \addlinespace
+        Umidade (\%) & Média & (35, 55, 55, 75) \\
+        \addlinespace
+        Umidade (\%) & Alta & (60, 80, 100, 100) \\
+        \addlinespace
+        Ventilação (\%) & Baixa & (0, 20, 20, 40) \\
+        \addlinespace
+        Ventilação (\%) & Média & (25, 50, 50, 75) \\
+        \addlinespace
+        Ventilação (\%) & Alta & (60, 80, 80, 100) \\
+        \bottomrule
+    \end{tabular}
+\end{table}
+
+Cada função vale zero fora de $[a, d]$, cresce linearmente de 0 a 1 entre $a$ e $b$, vale 1 entre $b$ e $c$ e decresce linearmente de 1 a 0 entre $c$ e $d$. Quando $b = c$, a função é triangular. Quando $a = b$ ou $c = d$, a rampa correspondente desaparece e a pertinência vale 1 na extremidade. A sobreposição permite que uma leitura pertença parcialmente a mais de um termo.
+
+\subsection{Base de regras}
+
+Cada célula representa uma regra. Por exemplo, SE a temperatura é amena E a umidade é alta, ENTÃO a ventilação é alta. As nove combinações cobrem todas as entradas válidas.
+
+\begin{table}[htbp]
+    \centering
+    \begin{tabular}{>{\raggedright\arraybackslash}p{4.8cm} >{\raggedright\arraybackslash}p{2.2cm} >{\raggedright\arraybackslash}p{2.2cm} >{\raggedright\arraybackslash}p{2.2cm}}
+        \toprule
+        \textbf{Temperatura / Umidade} & \textbf{Baixa} & \textbf{Média} & \textbf{Alta} \\
+        \midrule
+        Fria & Baixa & Baixa & Média \\
+        \addlinespace
+        Amena & Baixa & Média & Alta \\
+        \addlinespace
+        Quente & Média & Alta & Alta \\
+        \bottomrule
+    \end{tabular}
+\end{table}
+
+\subsection{Inferência de Mamdani e defuzzificação}
+
+Primeiro, o sistema calcula os graus de pertinência das duas entradas. Em cada regra, o operador E usa o mínimo dos dois graus. Esse valor limita a altura do conjunto fuzzy consequente. O máximo ponto a ponto combina os consequentes cortados. Se várias regras ativam o mesmo termo de saída, basta usar o maior corte desse termo.
+
+O centroide divide o momento da curva agregada em relação à origem pela sua área. O programa aproxima as duas integrais pela regra dos trapézios, com passo de 0,1 ponto percentual entre 0 e 100. O resultado é um comando numérico para o ventilador.
+
+\subsection{Exemplo com 30 $^{\circ}$C e 65\% de umidade}
+
+A temperatura tem pertinência 0 em fria, $(31 - 30)/(31 - 26) = 0,20$ em amena e $(30 - 27)/(32 - 27) = 0,60$ em quente. A umidade tem pertinência 0 em baixa, $(75 - 65)/(75 - 55) = 0,50$ em média e $(65 - 60)/(80 - 60) = 0,25$ em alta.
+
+\begin{table}[htbp]
+    \centering
+    \begin{tabular}{>{\raggedright\arraybackslash}p{2.8cm} >{\raggedright\arraybackslash}p{2.5cm} >{\raggedright\arraybackslash}p{2.8cm} >{\raggedright\arraybackslash}p{3.8cm}}
+        \toprule
+        \textbf{Temperatura} & \textbf{Umidade} & \textbf{Ventilação} & \textbf{Ativação (mínimo)} \\
+        \midrule
+        Amena & Média & Média & 0,20 \\
+        \addlinespace
+        Amena & Alta & Alta & 0,20 \\
+        \addlinespace
+        Quente & Média & Alta & 0,50 \\
+        \addlinespace
+        Quente & Alta & Alta & 0,25 \\
+        \bottomrule
+    \end{tabular}
+\end{table}
+
+A ventilação média fica cortada em 0,20. Para a ventilação alta, o maior corte é 0,50. A baixa fica em zero. O gráfico mostra a união dos conjuntos cortados e a posição do centroide.
+
+\begin{figure}[htbp]
+    \centering
+    \begin{tikzpicture}[x=0.105cm, y=3.0cm]
+        \fill[gray!20] (25,0) -- (30,0.2) -- (64,0.2) -- (70,0.5) -- (90,0.5) -- (100,0) -- cycle;
+        \draw[thick] (0,0) -- (25,0) -- (30,0.2) -- (64,0.2) -- (70,0.5) -- (90,0.5) -- (100,0);
+        \draw (0,0) -- (100,0);
+        \draw (0,0) -- (0,1.0);
+        \foreach \x in {0,20,40,60,80,100} {
+            \draw (\x,0) -- (\x,-0.04) node[below] {\small \x};
+        }
+        \foreach \y/\ylab in {0.2/{0,2}, 0.5/{0,5}, 1.0/{1,0}} {
+            \draw (0,\y) -- (-1.2,\y) node[left] {\small \ylab};
+        }
+        \node[above right] at (0,1.02) {\small Grau de pertinência};
+        \node at (50,-0.34) {\small Comando de ventilação (\%)};
+        \draw[dashed, thick] (68.89,0) -- (68.89,0.72) node[above] {\small 68,89\%};
+    \end{tikzpicture}
+\end{figure}
+
+A área aproximada é 21,9000 e o momento é 1508,7000. A razão 1508,7000 / 21,9000 resulta em um comando de \textbf{68,89\%}.
+
+\subsection{Execução e verificação}
+
+Execute \texttt{python ventilacao\_fuzzy.py 30 65} na pasta da questão.
+
+O controle retornou 20\% a 16 $^{\circ}$C e 0\%, 50\% a 26 $^{\circ}$C e 55\%, e 80\% a 40 $^{\circ}$C e 100\%.
+
+A saída pode diminuir em algumas transições. Com umidade fixa em 38\%, elevar a temperatura de 23 $^{\circ}$C para 24 $^{\circ}$C reduz o comando de 30,34\% para 28,46\%. As ativações dos consequentes variam em ritmos diferentes na sobreposição, o que desloca o centroide da saída agregada.
+
+\section*{Referências}
+
+\noindent [1] MAMDANI, E. H.; ASSILIAN, S. \textbf{An Experiment in Linguistic Synthesis with a Fuzzy Logic Controller}. 1975. Disponível em: https://doi.org/10.1016/S0020-7373(75)80002-2.
+
+\end{document}

@@ -1,0 +1,104 @@
+\documentclass[12pt,a4paper]{article}
+
+\usepackage[utf8]{inputenc}
+\usepackage[T1]{fontenc}
+\usepackage[brazil]{babel}
+\usepackage[top=3cm,left=3cm,bottom=2cm,right=2cm]{geometry}
+\usepackage{mathptmx}
+\usepackage{inconsolata}
+\usepackage{setspace}
+\usepackage{indentfirst}
+\usepackage{titlesec}
+\usepackage{booktabs}
+\usepackage{array}
+\usepackage{listings}
+\usepackage{xcolor}
+\usepackage{xurl}
+\urlstyle{same}
+
+\onehalfspacing
+\setlength{\parindent}{1.25cm}
+
+\titleformat*{\section}{\normalfont\bfseries\normalsize}
+\titleformat*{\subsection}{\normalfont\bfseries\normalsize}
+
+\lstset{
+    basicstyle=\ttfamily\footnotesize,
+    breaklines=true,
+    columns=fullflexible,
+    keepspaces=true,
+    frame=single,
+    rulecolor=\color{black!25},
+    backgroundcolor=\color{black!4},
+    xleftmargin=0.2cm,
+    xrightmargin=0.2cm,
+    framexleftmargin=4pt,
+    framexrightmargin=4pt,
+    framextopmargin=4pt,
+    framexbottommargin=4pt,
+    literate=
+        {á}{{\'a}}1 {é}{{\'e}}1 {í}{{\'i}}1 {ó}{{\'o}}1 {ú}{{\'u}}1
+        {Á}{{\'A}}1 {É}{{\'E}}1 {Í}{{\'I}}1 {Ó}{{\'O}}1 {Ú}{{\'U}}1
+        {ã}{{\~a}}1 {õ}{{\~o}}1 {Ã}{{\~A}}1 {Õ}{{\~O}}1
+        {â}{{\^a}}1 {ê}{{\^e}}1 {ô}{{\^o}}1
+        {à}{{\`a}}1 {ç}{{\c{c}}}1 {Ç}{{\c{C}}}1
+}
+
+\begin{document}
+
+\section{Questão 14: Representação, inferência e aprendizagem em grafos de conhecimento}
+
+\subsection{Representação do conhecimento}
+
+Um grafo de conhecimento descreve entidades e relações de um domínio. Em RDF, os fatos são expressos como triplas de sujeito, predicado e objeto. Identificadores estáveis distinguem entidades com nomes semelhantes. O objeto pode ser outra entidade ou um literal, como uma data. O vocabulário de classes e propriedades ajuda a interpretar as triplas e a integrar dados de fontes distintas [1].
+
+No Wikidata, o Farol de Alexandria (Q43244) é um item individual e farol (Q39715) é uma classe. A propriedade P31 indica que o primeiro é uma instância da segunda. A propriedade P279 relaciona classes, como farol e edifício (Q41176). A distinção permite consultar entidades concretas por categorias mais gerais [2--4].
+
+\subsection{Aplicação: busca de patrimônio no Wikidata Query Service}
+
+Um catálogo de patrimônio pode usar o serviço de consultas do Wikidata para recuperar construções classificadas em categorias específicas. Para incluir o Farol de Alexandria em uma busca por edifícios, o serviço pode combinar duas afirmações do grafo.
+
+\begin{lstlisting}
+Farol de Alexandria (Q43244) --P31--> Farol (Q39715)
+Farol (Q39715)               --P279-> Edifício (Q41176)
+\end{lstlisting}
+
+A regra é que, se um item é instância de uma classe e essa classe é subclasse de outra, então o item também pertence à classe mais geral. Neste exemplo, obtemos que o Farol de Alexandria é um edifício. A justificativa é o caminho entre o item e a classe final, formado pelas duas afirmações verificadas no Wikidata [3, 4].
+
+O catálogo pode aplicar a regra durante a consulta. Outra implementação poderia pré-calcular os tipos inferidos e armazená-los em um grafo derivado. Nesse caso, alterações nas relações de classe exigiriam revisar as conclusões armazenadas.
+
+\subsection{Consulta que realiza a inferência}
+
+A consulta SPARQL abaixo verifica se há um caminho entre o Farol de Alexandria e a classe Edifício. O operador de sequência exige primeiro uma relação de instância (P31) e depois zero ou mais relações de subclasse (P279). Zero passos de subclasse aceita uma classificação direta. Um ou mais passos recuperam classificações indiretas [5].
+
+\begin{lstlisting}
+PREFIX wd: <http://www.wikidata.org/entity/>
+PREFIX wdt: <http://www.wikidata.org/prop/direct/>
+ASK {
+    wd:Q43244 wdt:P31/wdt:P279* wd:Q41176 .
+}
+\end{lstlisting}
+
+O resultado esperado é \textbf{true}, pois o caminho com um passo P31 e um passo P279 foi verificado nas páginas dos dois itens. A expressão calcula a resposta a partir dos vínculos disponíveis. A própria consulta não grava uma nova afirmação na base. Se um caminho estiver ausente, o resultado só indica que a consulta não o encontrou.
+
+\subsection{Aprendizagem no grafo}
+
+Um método de aprendizagem pode usar as triplas conhecidas para sugerir relações ainda não registradas. No TransE, entidades e relações são representadas por vetores. O treinamento ajusta esses vetores para que a soma do vetor do sujeito com o da relação fique próxima do vetor do objeto em triplas observadas. Triplas modificadas, por exemplo pela troca do objeto, servem como exemplos de contraste [6].
+
+Em um catálogo, o método poderia classificar possíveis autores para obras cujo campo de autoria está vazio. Um candidato com boa pontuação segue para verificação em uma fonte bibliográfica. A dedução taxonômica tem um caminho verificável em cada caso. A previsão do TransE depende dos exemplos de treino e pode sofrer com cobertura desigual ou confundir entidades frequentemente associadas. Para avaliá-la, separam-se ligações conhecidas para teste e mede-se, por exemplo, a proporção de respostas corretas entre as dez primeiras sugestões.
+
+\section*{Referências}
+
+\noindent [1] W3C. \textbf{RDF Schema 1.1}. Disponível em: \url{https://www.w3.org/TR/rdf-schema/}.
+
+\noindent [2] WIKIDATA. \textbf{Propriedades básicas de classificação}. Disponível em: \url{https://www.wikidata.org/wiki/Help:Basic_membership_properties}.
+
+\noindent [3] WIKIDATA. \textbf{Farol de Alexandria (Q43244)}. Disponível em: \url{https://www.wikidata.org/wiki/Q43244}.
+
+\noindent [4] WIKIDATA. \textbf{Farol (Q39715)}. Disponível em: \url{https://www.wikidata.org/wiki/Q39715}.
+
+\noindent [5] WIKIDATA. \textbf{Tutorial de SPARQL}. Disponível em: \url{https://www.wikidata.org/wiki/Wikidata:SPARQL_tutorial/en}.
+
+\noindent [6] BORDES, A. et al. \textbf{Translating Embeddings for Modeling Multi-relational Data}. NeurIPS, 2013. Disponível em: \url{https://proceedings.neurips.cc/paper/2013/hash/1cecc7a77928ca8133fa24680a88d2f9-Abstract.html}.
+
+\end{document}
