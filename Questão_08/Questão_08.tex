@@ -112,11 +112,20 @@ A exposição é tratada como menos frequente que sua ausência e eleva a probab
 
 \subsection{Inferência exata}
 
-O programa lê o grafo e as CPTs do arquivo \texttt{modelo\_influenza.json}. Ele enumera as 32 configurações binárias e calcula a massa conjunta de cada uma. Uma evidência observada elimina configurações incompatíveis. A massa das configurações restantes com I = Sim é dividida pela massa total restante. Variáveis sem observação são somadas sobre os dois estados.
+O programa lê o grafo e as CPTs de \texttt{modelo\_influenza.json}. A biblioteca \texttt{pgmpy} [2] representa o grafo com \texttt{DiscreteBayesianNetwork} e as tabelas com \texttt{TabularCPD}.
 
-Sem observações, $P(\mathrm{I} = \mathrm{Sim}) = 0,20 \times 0,30 + 0,80 \times 0,05 = 0,10$. Com febre observada, $P(\mathrm{I} = \mathrm{Sim} \mid \mathrm{F} = \mathrm{Sim}) = (0,10 \times 0,75) / (0,10 \times 0,75 + 0,90 \times 0,20) = 29,41\%$. A massa conjunta sem evidências foi verificada e soma 1.
+A inferência exata usa \texttt{VariableElimination}. O algoritmo condiciona os fatores às observações, multiplica os fatores relevantes e soma sobre os estados das variáveis eliminadas. A distribuição normalizada fornece $P(I=\mathrm{Sim})$ dadas as evidências.
 
-Um relato incerto pode atribuir pesos de verossimilhança a ambos os estados. Para dor muscular, os pesos 0,2 (Não) e 0,8 (Sim) tornam o relato quatro vezes mais provável se o sintoma estiver presente. Cada configuração é multiplicada pelo peso correspondente antes da normalização. Os pesos descrevem a compatibilidade do relato com o estado e não a probabilidade posterior do sintoma.
+Sem observações, $P(I=\mathrm{Sim}) = 0{,}20 \times 0{,}30 + 0{,}80 \times 0{,}05 = 0{,}10$.
+Com febre observada, obtemos
+\[
+P(I=\mathrm{Sim}\mid F=\mathrm{Sim})
+  = \frac{0{,}10 \times 0{,}75}{0{,}10 \times 0{,}75 + 0{,}90 \times 0{,}20}
+  \approx 29{,}41\%.
+\]
+Esses cálculos manuais conferem com a saída do programa.
+
+Um relato incerto é fornecido ao \texttt{pgmpy} como evidência virtual. Para dor muscular, os pesos 0,2 (Não) e 0,8 (Sim) tornam o relato quatro vezes mais provável se o sintoma estiver presente. O programa divide ambos os pesos pelo maior antes da consulta. Como o fator é comum aos dois estados, a razão de verossimilhanças e a distribuição posterior são preservadas.
 
 \subsection{Experimentos}
 
@@ -145,10 +154,19 @@ A dor muscular observada teve o maior efeito na segunda sequência, pois é prop
 
 Em comparação com regras determinísticas, a rede combina sinais conflitantes, distingue ausência de falta de informação e produz uma estimativa gradual. As CPTs são hipotéticas, e a independência entre sintomas pode superestimar a força de evidências correlacionadas. Uma extensão poderia incluir outras doenças respiratórias, vacinação e resultados de exames, com parâmetros estimados e calibrados em dados adequados. O protótipo tem finalidade acadêmica.
 
-Execute \texttt{python rede\_bayesiana.py} para reproduzir os quatro cenários. Para uma consulta própria, use, por exemplo, \texttt{python rede\_bayesiana.py febre=sim tosse=nao}.
+Na pasta \texttt{Questão\_08}, instale a dependência e execute o programa para reproduzir os quatro cenários.
+
+\begin{lstlisting}
+python -m pip install -r requirements.txt
+python rede_bayesiana.py
+\end{lstlisting}
+
+Para uma consulta própria, use, por exemplo, \texttt{python rede\_bayesiana.py febre=sim tosse=nao}.
 
 \section*{Referências}
 
 \noindent [1] CDC. \textbf{Signs and Symptoms of Flu}. Disponível em: \url{https://www.cdc.gov/flu/signs-symptoms/index.html}.
+
+\noindent [2] PGMPY. \textbf{Inference in Discrete Bayesian Network}. Disponível em: \url{https://pgmpy.org/examples/Inference_Discrete_BN.html}.
 
 \end{document}
